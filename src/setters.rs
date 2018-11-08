@@ -106,11 +106,55 @@ impl<
     }
 }
 
+pub struct OptionalSetter<S, A>(pub S, pub A);
+
+impl<
+    'a, F: Source, A: 'a,
+    S: ColumnsSetter<F>,
+> ColumnsSetter<F> for OptionalSetter<S, Option<A>> {
+    #[inline]
+    fn push_selection(&self, buf: &mut String) {
+        if let Some(_) = self.1 {
+            self.0.push_selection(buf);
+        }
+
+    }
+
+    #[inline]
+    fn push_values(&self, buf: &mut String, idx: usize) -> usize {
+        if let Some(_) = self.1 {
+            <S as ColumnsSetter<F>>::push_values(
+                &self.0, buf, idx
+            )
+        } else {
+            idx
+        }
+    }
+}
+
+impl<'a, S, A: 'a> Takes<'a, Unit> for OptionalSetter<S, Option<A>>
+where S: Takes<'a, &'a A> {
+    #[inline]
+    fn push_values<'b>(&'a self, _values: Unit, buf: &'b mut Vec<&'a ToSql>) {
+        if let Some(ref val) = self.1 {
+            self.0.push_values(val, buf);
+        }
+    }
+}
+
+
 impl<C> ColWrap<C> {
     #[inline]
     pub fn taking<'a, A: 'a>(self, assignment: A) -> WithValue<Self, A>
     where Self: Takes<'a, &'a A> {
         WithValue(self, assignment)
     }
+
+    #[inline]
+    pub fn if_some<'a, A: 'a>(self, assignment: Option<A>) -> OptionalSetter<Self, Option<A>>
+    where Self: Takes<'a, &'a A> {
+        OptionalSetter(self, assignment)
+    }
 }
+
 
