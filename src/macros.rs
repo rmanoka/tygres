@@ -1,15 +1,19 @@
 #[macro_export]
 macro_rules! seq {
-    ($first: expr, $($rest: expr),+) => {
+    ($first:expr, $($rest: expr),* $(,)*) => {
         $crate::utils::Seq($first, seq!($($rest),+))
     };
-    ($one: expr) => {
+    ($one:expr) => {
         $one
     };
 }
 
 #[macro_export]
 macro_rules! table {
+    (*$name:ident, $table_name: expr) => {
+        table!(*$name, $table_name);
+        impl Sources for $name {}
+    };
     ($name:ident, $table_name: expr) => {
         pub struct $name;
         impl $crate::Source for $name {

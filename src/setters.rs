@@ -65,6 +65,22 @@ impl<'a> Takes<'a, Unit> for Unit {
     fn push_values<'b>(&'a self, _values: Unit, _buf: &'b mut Vec<&'a ToSql>) {}
 }
 
+impl<'a, S: Takes<'a, Unit>> Takes<'a, Unit> for Wrap<S> {
+    #[inline]
+    fn push_values<'b>(&'a self, values: Unit, buf: &'b mut Vec<&'a ToSql>) {
+        self.0.push_values(values, buf);
+    }
+}
+
+impl<'a, S: Takes<'a, Unit>, T: Takes<'a, Unit>> Takes<'a, Unit> for Seq<S, T> {
+    #[inline]
+    fn push_values<'b>(&'a self, _values: Unit, buf: &'b mut Vec<&'a ToSql>) {
+        self.0.push_values(Unit, buf);
+        self.1.push_values(Unit, buf);
+    }
+}
+
+
 impl<'a, S, A: 'a> Takes<'a, Unit> for WithValue<S, A>
 where S: Takes<'a, &'a A> {
     #[inline]
@@ -73,10 +89,28 @@ where S: Takes<'a, &'a A> {
     }
 }
 
+impl<
+    'a, F: Source, A: 'a,
+    S: ColumnsSetter<F>,
+> ColumnsSetter<F> for WithValue<S, A> {
+    #[inline]
+    fn push_selection(&self, buf: &mut String) {
+        self.0.push_selection(buf);
+    }
+
+    #[inline]
+    fn push_values(&self, buf: &mut String, idx: usize) -> usize {
+        <S as ColumnsSetter<F>>::push_values(
+            &self.0, buf, idx
+        )
+    }
+}
+
 impl<C> ColWrap<C> {
     #[inline]
-    pub fn taking<A>(self, assignment: A) -> WithValue<C, A> {
-        WithValue(self.0, assignment)
+    pub fn taking<'a, A: 'a>(self, assignment: A) -> WithValue<Self, A>
+    where Self: Takes<'a, &'a A> {
+        WithValue(self, assignment)
     }
 }
 
