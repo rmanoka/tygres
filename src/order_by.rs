@@ -35,7 +35,7 @@ impl<F: Source, O: OrderSeq<F>> OrderByClause<F> for Wrap<O> {
 pub struct Asc<C>(pub C);
 pub struct Desc<C>(pub C);
 
-impl<C> Wrap<C> {
+impl<C> ColWrap<C> {
     #[inline]
     pub fn asc(self) -> Asc<C> {
         Asc(self.0)
