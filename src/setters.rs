@@ -2,7 +2,7 @@ use crate::{*, utils::*};
 use postgres::types::ToSql;
 
 pub trait ColumnsSetter<F: Source> {
-    fn push_selection(&self, buf: &mut String);
+    fn push_selection(&self, buf: &mut String) -> bool;
     fn push_values(&self, buf: &mut String, idx: usize) -> usize;
 }
 
@@ -12,21 +12,26 @@ impl<
     B: ColumnsSetter<F>
 > ColumnsSetter<F> for Seq<A, B> {
     #[inline]
-    fn push_selection(&self, buf: &mut String) {
-        self.0.push_selection(buf);
-        buf.push_str(", ");
-        self.1.push_selection(buf);
+    fn push_selection(&self, buf: &mut String) -> bool {
+        if self.0.push_selection(buf) {
+            buf.push_str(", ");
+            self.1.push_selection(buf)
+        } else {
+            self.1.push_selection(buf)
+        }
     }
 
     #[inline]
     fn push_values(&self, buf: &mut String, idx: usize) -> usize {
-        let idx = self.0.push_values(buf, idx);
-        buf.push_str(", ");
-        self.1.push_values(buf, idx)
+        let idx2 = self.0.push_values(buf, idx);
+        if (idx2 != idx) {
+            buf.push_str(", ");
+        }
+        self.1.push_values(buf, idx2)
     }
 }
 
-pub trait Takes<'a, S: Sized> {
+pub trait Takes<'a, S> {
     fn push_values<'b>(&'a self, values: S, buf: &'b mut Vec<&'a ToSql>);
 }
 
@@ -60,6 +65,19 @@ impl<'a, A: 'a, S: Takes<'a, A>, I: IntoIterator<Item = A>> Takes<'a, I> for Rep
         }
     }
 }
+
+// use std::op[]
+// impl<'a, A: 'a, S: Takes<'a, &'a A>> Takes<'a, &'a [A]> for Reps<S> {
+//     #[inline]
+//     fn push_values<'b>(&'a self, slice: &'a [A], buf: &'b mut Vec<&'a ToSql>) {
+//         for value in slice {
+//             self.1.push_values(value, buf);
+//         }
+//     }
+// }
+
+
+
 impl<'a> Takes<'a, Unit> for Unit {
     #[inline]
     fn push_values<'b>(&'a self, _values: Unit, _buf: &'b mut Vec<&'a ToSql>) {}
@@ -90,12 +108,12 @@ where S: Takes<'a, &'a A> {
 }
 
 impl<
-    'a, F: Source, A: 'a,
+    F: Source, A,
     S: ColumnsSetter<F>,
 > ColumnsSetter<F> for WithValue<S, A> {
     #[inline]
-    fn push_selection(&self, buf: &mut String) {
-        self.0.push_selection(buf);
+    fn push_selection(&self, buf: &mut String) -> bool {
+        self.0.push_selection(buf)
     }
 
     #[inline]
@@ -113,11 +131,35 @@ impl<
     S: ColumnsSetter<F>,
 > ColumnsSetter<F> for OptionalSetter<S, Option<A>> {
     #[inline]
-    fn push_selection(&self, buf: &mut String) {
-        if let Some(_) = self.1 {
-            self.0.push_selection(buf);
+    fn push_selection(&self, buf: &mut String) -> bool {
+        match self.1 {
+            Some(_) => self.0.push_selection(buf),
+            None => false,
         }
+    }
 
+    #[inline]
+    fn push_values(&self, buf: &mut String, idx: usize) -> usize {
+        if let Some(_) = self.1 {
+            <S as ColumnsSetter<F>>::push_values(
+                &self.0, buf, idx
+            )
+        } else {
+            idx
+        }
+    }
+}
+
+impl<
+    'a, F: Source, A: 'a,
+    S: ColumnsSetter<F>,
+> ColumnsSetter<F> for OptionalSetter<S, &'a Option<A>> {
+    #[inline]
+    fn push_selection(&self, buf: &mut String) -> bool {
+        match self.1 {
+            Some(_) => self.0.push_selection(buf),
+            None => false,
+        }
     }
 
     #[inline]
@@ -142,6 +184,15 @@ where S: Takes<'a, &'a A> {
     }
 }
 
+impl<'a, S, A: 'a> Takes<'a, Unit> for OptionalSetter<S, &'a Option<A>>
+where S: Takes<'a, &'a A> {
+    #[inline]
+    fn push_values<'b>(&'a self, _values: Unit, buf: &'b mut Vec<&'a ToSql>) {
+        if let Some(ref val) = self.1 {
+            self.0.push_values(val, buf);
+        }
+    }
+}
 
 impl<C> ColWrap<C> {
     #[inline]
@@ -150,9 +201,13 @@ impl<C> ColWrap<C> {
         WithValue(self, assignment)
     }
 
+    // #[inline]
+    // pub fn if_some<'a, A: 'a>(self, assignment: Option<A>) -> OptionalSetter<Self, Option<A>>
+    // where Self: Takes<'a, &'a A> {
+    //     OptionalSetter(self, assignment)
+    // }
     #[inline]
-    pub fn if_some<'a, A: 'a>(self, assignment: Option<A>) -> OptionalSetter<Self, Option<A>>
-    where Self: Takes<'a, &'a A> {
+    pub fn if_some<A>(self, assignment: A) -> OptionalSetter<Self, A> {
         OptionalSetter(self, assignment)
     }
 }

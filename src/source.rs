@@ -63,8 +63,9 @@ impl<F: Source, C: Column<F>> Selection<F> for ColWrap<C> {
 
 impl<F: Source, C: Column<F>> ColumnsSetter<F> for ColWrap<C> {
     #[inline]
-    fn push_selection(&self, buf: &mut String) {
+    fn push_selection(&self, buf: &mut String) -> bool {
         self.0.push_name(buf);
+        true
     }
 
     #[inline]
@@ -74,27 +75,3 @@ impl<F: Source, C: Column<F>> ColumnsSetter<F> for ColWrap<C> {
     }
 }
 
-// pub struct Equality<C>(C);
-
-// impl<F: Source, C: Column<F>> Clause<F> for Equality<Wrap<C>> {
-//     fn push_clause(&self, buf: &mut String, idx: usize) -> usize {
-//         buf.push_str((self.0).0.name());
-//         buf.push_str(" = ");
-//         buf.push_str(&format!("${}", idx));
-//         idx + 1
-//     }
-// }
-
-// impl<C, A: Assignment<Wrap<C>>> Assignment<Equality<Wrap<C>>> for A {
-//     fn push_values<'b>(&'a self, setter: &'a Equality<Wrap<C>>, buf: &'b mut Vec<&'a (ToSql)>) {
-//         <Self as Assignment<Wrap<C>>>::push_values(
-//             self, &setter.0, buf
-//         )
-//     }
-// }
-
-// impl<C> Wrap<C> {
-//     pub fn equality(self) -> Equality<Self> {
-//         Equality(self)
-//     }
-// }

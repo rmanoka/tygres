@@ -12,7 +12,6 @@ pub trait Synchronous: IntoSql + Sized {
         let mut sql: String = String::with_capacity(0x1000);
         let count = self.push_sql(&mut sql);
         let types = self.into_types();
-
         Ok(Statement{
             statement: conn.prepare(&sql)?,
             getter: types.0,
@@ -36,16 +35,13 @@ impl<'a, Get, Set> Statement<'a, Get, Set> {
     where Set: Takes<'a, A> {
         let mut values = Vec::with_capacity(self.setter_count);
         self.setter.push_values(assignment, &mut values);
-        if (values.len() != self.setter_count) {
-            panic!("Statement place-holders count mismatch with value count.")
-        }
         self.statement.execute(&values[..])
     }
 
     pub fn query_with<A>(&'a self, assignment: A)
     -> Result<QueryRows<'a, Get>, Error>
     where Set: Takes<'a, A> {
-        let mut values = vec![];
+        let mut values = Vec::with_capacity(self.setter_count);
         self.setter.push_values(assignment, &mut values);
 
         Ok(QueryRows{

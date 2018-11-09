@@ -44,6 +44,7 @@ macro_rules! column {
 macro_rules! takes {
     ($name:ident, $ty:ty) => {
         impl<'a> $crate::Takes<'a, &'a $ty> for $name {
+            #[inline]
             fn push_values<'b>(&'a self, values: &'a $ty, buf: &'b mut Vec<&'a postgres::types::ToSql>) {
                 buf.push(values);
             }
@@ -59,6 +60,43 @@ macro_rules! makes {
                 (row.get(idx), idx + 1)
             }
         }
+    }
+}
+
+#[macro_export]
+macro_rules! takes_json {
+    ($name:ident, $ty:ty) => {
+
+        impl<'a> postgres::types::ToSql for $ty {
+            fn to_sql(&self, ty: &postgres::types::Type, out: &mut Vec<u8>) -> Result<postgres::types::IsNull, Box<std::error::Error + Sync + Send>> {
+                postgres::types::Json(self).to_sql(ty, out)
+            }
+
+            fn accepts(ty: &postgres::types::Type) -> bool {
+                <postgres::types::Json::<Question> as postgres::types::ToSql>::accepts(ty)
+            }
+
+            to_sql_checked!();
+        }
+        takes!($name, $ty);
+    }
+}
+
+#[macro_export]
+macro_rules! makes_json {
+    ($name:ident, $ty:ty) => {
+
+        impl<'a> postgres::types::FromSql<'a> for $ty {
+            fn from_sql(ty: &postgres::types::Type, raw: &[u8]) -> Result<$ty, Box<std::error::Error + Sync + Send>> {
+                postgres::types::Json::<$ty>::from_sql(ty, raw)
+                    .map(|j| j.0)
+            }
+
+            fn accepts(ty: &postgres::types::Type) -> bool {
+                <postgres::types::Json::<Question> as postgres::types::FromSql>::accepts(ty)
+            }
+        }
+        makes!($name, $ty);
     }
 }
 

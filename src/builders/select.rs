@@ -12,8 +12,8 @@ builder! {
     }
 }
 
-pub trait Limiting: Send  {
-    type Set: Send ;
+pub trait Limiting {
+    type Set;
     fn to_setter(self) -> Self::Set;
 
     fn push_limit(&self, buf: &mut String, idx: usize) -> usize;
@@ -45,7 +45,7 @@ impl Limiting for Wrap<Holder> {
 }
 
 
-pub trait Offsetting: Send  {
+pub trait Offsetting {
     fn push_offset(&self, buf: &mut String, idx: usize) -> usize;
 }
 

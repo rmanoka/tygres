@@ -21,16 +21,18 @@ impl<F: Source, S: ColumnsSetter<F>> InsValue<F> for Wrap<S> {
             panic!("reps must be a positive integer");
         }
         buf.push_str("(");
-        self.0.push_selection(buf);
+        if (!self.0.push_selection(buf)) {
+            panic!("selection empty");
+        }
         buf.push_str(") VALUES");
         let mut idx = 1;
         for i in (0..reps) {
-            if (i != 0) {
-                buf.push_str(",")
-            };
+            if i != 0 {
+                buf.push_str(", ");
+            }
             buf.push_str(" (");
             idx = self.0.push_values(buf, idx);
-            buf.push_str(")")
+            buf.push_str(")");
         }
         idx
     }
