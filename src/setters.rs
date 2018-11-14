@@ -201,15 +201,25 @@ impl<C> ColWrap<C> {
         WithValue(self, assignment)
     }
 
-    // #[inline]
-    // pub fn if_some<'a, A: 'a>(self, assignment: Option<A>) -> OptionalSetter<Self, Option<A>>
-    // where Self: Takes<'a, &'a A> {
-    //     OptionalSetter(self, assignment)
-    // }
     #[inline]
-    pub fn if_some<A>(self, assignment: A) -> OptionalSetter<Self, A> {
+    pub fn if_some<'a, A: 'a>(self, assignment: Option<A>) -> OptionalSetter<Self, Option<A>>
+    where Self: Takes<'a, &'a A> {
         OptionalSetter(self, assignment)
     }
+
+    #[inline]
+    pub fn if_some_ref<'a, A: 'a>(self, assignment: &'a Option<A>) -> OptionalSetter<Self, &'a Option<A>>
+    where Self: Takes<'a, &'a A> {
+        OptionalSetter(self, assignment)
+    }
+    // #[inline]
+    // pub fn if_some<A>(self, assignment: A) -> OptionalSetter<Self, A> {
+    //     OptionalSetter(self, assignment)
+    // }
 }
 
 
+pub trait Setter<'a> {
+    type Out;
+    fn as_setter(&'a self) -> Self::Out;
+}

@@ -1,6 +1,6 @@
 use crate::{*, utils::*};
 
-use dsl_macros::builder;
+use tygres_macros::builder;
 builder! {
     struct SelectBuilder {
         source: F[Source],

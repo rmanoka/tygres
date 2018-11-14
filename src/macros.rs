@@ -9,6 +9,16 @@ macro_rules! seq {
 }
 
 #[macro_export]
+macro_rules! Seq {
+    ($first:ty, $($rest: ty),* $(,)*) => {
+        $crate::utils::Seq<$first, Seq!($($rest),+)>
+    };
+    ($one:ty) => {
+        $one
+    };
+}
+
+#[macro_export]
 macro_rules! table {
     (*$name:ident, $table_name: expr) => {
         table!(*$name, $table_name);
@@ -73,7 +83,7 @@ macro_rules! takes_json {
             }
 
             fn accepts(ty: &postgres::types::Type) -> bool {
-                <postgres::types::Json::<Question> as postgres::types::ToSql>::accepts(ty)
+                <postgres::types::Json::<$ty> as postgres::types::ToSql>::accepts(ty)
             }
 
             to_sql_checked!();
@@ -93,10 +103,27 @@ macro_rules! makes_json {
             }
 
             fn accepts(ty: &postgres::types::Type) -> bool {
-                <postgres::types::Json::<Question> as postgres::types::FromSql>::accepts(ty)
+                <postgres::types::Json::<$ty> as postgres::types::FromSql>::accepts(ty)
             }
         }
         makes!($name, $ty);
     }
 }
 
+#[macro_export]
+macro_rules! With {
+    ($val:ty, $col:ty) => {
+        $crate::utils::WithValue<
+            $crate::utils::ColWrap<$col>,
+            $val>
+    }
+}
+
+#[macro_export]
+macro_rules! Opt {
+    ($val:ty, $col:ty) => {
+        $crate::OptionalSetter<
+            $crate::utils::ColWrap<$col>,
+            $val>
+    }
+}

@@ -8,6 +8,6 @@ edition = "2018"
 futures = "0.1.25"
 tokio = {version = "0.1.11", features = ["async-await-preview"]}
 tokio-async-await = "0.1.4"
-dsl-macros = {path = "../dsl-macros"}
+tygres-macros = {path = "../tygres-macros"}
 tokio-postgres = {path = "../rust-postgres/tokio-postgres"}
 postgres = {path = "../rust-postgres/postgres"}
