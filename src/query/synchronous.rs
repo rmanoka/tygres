@@ -31,16 +31,16 @@ pub struct Statement<'a, Get, Set> {
 }
 
 impl<'a, Get, Set> Statement<'a, Get, Set> {
-    pub fn execute_with<A>(&'a self, assignment: A) -> Result<u64, Error>
-    where Set: Takes<'a, A> {
+    pub fn execute_with<'b, A>(&'b self, assignment: A) -> Result<u64, Error>
+    where Set: Takes<'b, A> {
         let mut values = Vec::with_capacity(self.setter_count);
         self.setter.push_values(assignment, &mut values);
         self.statement.execute(&values[..])
     }
 
-    pub fn query_with<A>(&'a self, assignment: A)
-    -> Result<QueryRows<'a, Get>, Error>
-    where Set: Takes<'a, A> {
+    pub fn query_with<'b, A>(&'b self, assignment: A)
+    -> Result<QueryRows<'b, Get>, Error>
+    where Set: Takes<'b, A> {
         let mut values = Vec::with_capacity(self.setter_count);
         self.setter.push_values(assignment, &mut values);
 
@@ -51,13 +51,14 @@ impl<'a, Get, Set> Statement<'a, Get, Set> {
     }
 }
 
-impl<'a, Get, Set> Statement<'a, Get, Set>
-where Set: Takes<'a, Unit> {
-    pub fn execute(&'a self) -> Result<u64, Error> {
+impl<'a, Get, Set> Statement<'a, Get, Set> {
+    pub fn execute<'b>(&'b self) -> Result<u64, Error>
+    where Set: Takes<'b, Unit> {
         self.execute_with(Unit)
     }
 
-    pub fn query(&'a self) -> Result<QueryRows<'a, Get>, Error> {
+    pub fn query<'b>(&'b self) -> Result<QueryRows<'b, Get>, Error>
+    where Set: Takes<'b, Unit> {
         self.query_with(Unit)
     }
 }
@@ -68,7 +69,7 @@ pub struct QueryRows<'a, Get> {
 }
 
 impl<'a, Get> QueryRows<'a, Get> {
-    pub fn iter(&'a self) -> QueryIter<'a, Get> {
+    pub fn iter<'b>(&'b self) -> QueryIter<'b, Get> {
         QueryIter {
             iter: self.rows.iter(),
             getter: &self.getter,

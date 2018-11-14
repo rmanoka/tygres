@@ -218,8 +218,9 @@ impl<C> ColWrap<C> {
     // }
 }
 
+pub trait TakesAny<T>: for<'b> Takes<'b, T> {}
 
 pub trait Setter<'a> {
-    type Out;
+    type Out: Takes<'a, Unit>;
     fn as_setter(&'a self) -> Self::Out;
 }
