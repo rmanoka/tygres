@@ -23,11 +23,8 @@ impl<
 
     #[inline]
     fn push_values(&self, buf: &mut String, idx: usize) -> usize {
-        let idx2 = self.0.push_values(buf, idx);
-        if (idx2 != idx) {
-            buf.push_str(", ");
-        }
-        self.1.push_values(buf, idx2)
+        let idx = self.0.push_values(buf, idx);
+        self.1.push_values(buf, idx)
     }
 }
 
@@ -218,9 +215,7 @@ impl<C> ColWrap<C> {
     // }
 }
 
-pub trait TakesAny<T>: for<'b> Takes<'b, T> {}
-
 pub trait Setter<'a> {
-    type Out: Takes<'a, Unit>;
+    type Out: Takes<'a, Unit> + 'a;
     fn as_setter(&'a self) -> Self::Out;
 }

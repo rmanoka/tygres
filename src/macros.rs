@@ -21,16 +21,15 @@ macro_rules! Seq {
 #[macro_export]
 macro_rules! table {
     (*$name:ident, $table_name: expr) => {
-        table!(*$name, $table_name);
-        impl Sources for $name {}
-    };
-    ($name:ident, $table_name: expr) => {
-        pub struct $name;
         impl $crate::Source for $name {
             fn push_source(&self, buf: &mut String) {
                 buf.push_str($table_name);
             }
         }
+    };
+    ($name:ident, $table_name: expr) => {
+        pub struct $name;
+        table!($name, $table_name);
     };
 }
 
