@@ -23,8 +23,8 @@ impl<F: Source, A: Selection<F>, B: Selection<F>> Selection<F> for Seq<A, B> {
     }
 }
 
-pub trait Makes<'a, S> {
-    fn get<R: Row>(&'a self, row: &'a R, idx: usize) -> (S, usize);
+pub trait Makes<'a, S>: Sized {
+    fn get<R: Row>(s: &'a S, row: &'a R, idx: usize) -> (Self, usize);
 }
 
 impl<
@@ -32,22 +32,22 @@ impl<
     A: Makes<'a, S>,
     B: Makes<'a, T>
 > Makes<'a, Seq<S, T>> for Seq<A, B> {
-    fn get<R: Row>(&'a self, row: &'a R, idx: usize) -> (Seq<S, T>, usize) {
-        let (a, idx) = self.0.get(row, idx);
-        let (b, idx) = self.1.get(row, idx);
+    fn get<R: Row>(s: &'a Seq<S, T>, row: &'a R, idx: usize) -> (Self, usize) {
+        let (a, idx) = Makes::get(&s.0, row, idx);
+        let (b, idx) = Makes::get(&s.1, row, idx);
         (Seq(a, b), idx)
     }
 }
 
-impl<'a, S, A: Makes<'a, S>> Makes<'a, S> for ColWrap<A> {
-    fn get<R: Row>(&'a self, row: &'a R, idx: usize) -> (S, usize) {
-        self.0.get(row, idx)
+impl<'a, S, A: Makes<'a, S>> Makes<'a, ColWrap<S>> for A {
+    fn get<R: Row>(s: &'a ColWrap<S>, row: &'a R, idx: usize) -> (Self, usize) {
+        Makes::get(&s.0, row, idx)
     }
 }
 
 impl<'a, S, A: Makes<'a, S>> Makes<'a, Wrap<S>> for Wrap<A> {
-    fn get<R: Row>(&'a self, row: &'a R, idx: usize) -> (Wrap<S>, usize) {
-        let (el, idx) = self.0.get(row, idx);
+    fn get<R: Row>(s: &'a Wrap<S>, row: &'a R, idx: usize) -> (Self, usize) {
+        let (el, idx) = Makes::get(&s.0, row, idx);
         (Wrap(el), idx)
     }
 }
@@ -101,10 +101,10 @@ impl<F: Source, S: Selection<F>> Selection<F> for OptionalSelection<S> {
     }
 }
 
-impl<'a, S, A: Makes<'a, S>> Makes<'a, Option<S>> for OptionalSelection<A> {
-    fn get<R: Row>(&'a self, row: &'a R, idx: usize) -> (Option<S>, usize) {
-        if (self.1) {
-            let (obj, idx) = self.0.get(row, idx);
+impl<'a, S, A: Makes<'a, S>> Makes<'a, OptionalSelection<S>> for Option<A> {
+    fn get<R: Row>(s: &'a OptionalSelection<S>, row: &'a R, idx: usize) -> (Self, usize) {
+        if (s.1) {
+            let (obj, idx) = Makes::get(&s.0, row, idx);
             (Some(obj), idx)
         } else {
             (None, idx)

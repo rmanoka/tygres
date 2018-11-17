@@ -49,8 +49,8 @@ pub struct TypedRow<'a, Get, R: Row>(pub &'a Get, pub R);
 
 impl<'a, Get, R: Row> TypedRow<'a, Get, R> {
     pub fn as_value<B>(&'a self) -> B
-    where Get: Makes<'a, Wrap<B>> {
-        (self.0.get(&self.1, 0).0).0
+    where Wrap<B>: Makes<'a, Get> {
+        (<Wrap<B> as Makes::<'a, Get>>::get(&self.0, &self.1, 0).0).0
     }
 }
 

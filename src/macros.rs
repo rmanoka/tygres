@@ -64,8 +64,8 @@ macro_rules! takes {
 #[macro_export]
 macro_rules! makes {
     ($name:ident, $ty:ty) => {
-        impl<'a> $crate::Makes<'a, $ty> for $name {
-            fn get<R: $crate::Row>(&'a self, row: &'a R, idx: usize) -> ($ty, usize) {
+        impl<'a> $crate::Makes<'a, $name> for $ty {
+            fn get<R: $crate::Row>(s: &'a $name, row: &'a R, idx: usize) -> ($ty, usize) {
                 (row.get(idx), idx + 1)
             }
         }
