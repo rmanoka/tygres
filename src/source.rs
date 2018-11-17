@@ -54,10 +54,11 @@ pub trait Column<F: Source> {
 
 impl<F: Source, C: Column<F>> Selection<F> for ColWrap<C> {
     #[inline]
-    fn push_selection(&self, src: &F, buf: &mut String) {
+    fn push_selection(&self, src: &F, buf: &mut String) -> bool {
         src.push_source(buf);
         buf.push_str(".");
         self.0.push_name(buf);
+        true
     }
 }
 

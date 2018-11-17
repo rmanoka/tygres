@@ -21,9 +21,10 @@ impl<F: Source, S: ColumnsSetter<F>> UpdValue<F> for Wrap<S> {
         if (!self.0.push_selection(buf)) {
             panic!("selection empty");
         }
-        buf.push_str(") = (");
+        buf.push_str(") = ( ROW (");
         let idx = self.0.push_values(buf, idx);
-        buf.push_str(")");
+        buf.push_str("))");
+        println!("update sql: {}", buf);
         idx
     }
 }

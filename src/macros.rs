@@ -75,7 +75,7 @@ macro_rules! makes {
 #[macro_export]
 macro_rules! takes_json {
     ($name:ident, $ty:ty) => {
-
+        use postgres::to_sql_checked;
         impl<'a> postgres::types::ToSql for $ty {
             fn to_sql(&self, ty: &postgres::types::Type, out: &mut Vec<u8>) -> Result<postgres::types::IsNull, Box<std::error::Error + Sync + Send>> {
                 postgres::types::Json(self).to_sql(ty, out)

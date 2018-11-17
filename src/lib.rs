@@ -5,7 +5,7 @@ pub mod utils;
 
 mod query;
 mod source;
-mod selection;
+mod getters;
 mod order_by;
 mod filter;
 mod setters;
@@ -16,9 +16,9 @@ pub use self::{
     query::{Row, TypedRow, IntoSql, SqlInput},
     query::synchronous, query::asynchronous,
     source::{Source, Column},
-    selection::{Selection, ReturningClause, Makes},
-    filter::{Clause, WhereClause},
-    setters::{ColumnsSetter, OptionalSetter, Takes, Setter},
+    getters::{Selection, ReturningClause, Makes, OptionalSelection},
+    filter::{Clause, WhereClause, Equality},
+    setters::{ColumnsSetter, OptionalSetter, Takes, OwnedSetter, Setter},
     order_by::{OrderByClause},
     builders::*,
 };

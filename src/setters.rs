@@ -148,9 +148,9 @@ impl<
 }
 
 impl<
-    'a, F: Source, A: 'a,
+    'a, 'c, F: Source, A,
     S: ColumnsSetter<F>,
-> ColumnsSetter<F> for OptionalSetter<S, &'a Option<A>> {
+> ColumnsSetter<F> for OptionalSetter<S, &'c Option<A>> {
     #[inline]
     fn push_selection(&self, buf: &mut String) -> bool {
         match self.1 {
@@ -181,8 +181,8 @@ where S: Takes<'a, &'a A> {
     }
 }
 
-impl<'a, S, A: 'a> Takes<'a, Unit> for OptionalSetter<S, &'a Option<A>>
-where S: Takes<'a, &'a A> {
+impl<'a, 'c, S, A> Takes<'a, Unit> for OptionalSetter<S, &'c Option<A>>
+where S: for<'b> Takes<'b, &'b A> {
     #[inline]
     fn push_values<'b>(&'a self, _values: Unit, buf: &'b mut Vec<&'a ToSql>) {
         if let Some(ref val) = self.1 {
@@ -218,4 +218,9 @@ impl<C> ColWrap<C> {
 pub trait Setter<'a> {
     type Out: Takes<'a, Unit> + 'a;
     fn as_setter(&'a self) -> Self::Out;
+}
+
+pub trait OwnedSetter {
+    type Out: for<'a> Takes<'a, Unit>;
+    fn as_setter(self) -> Self::Out;
 }

@@ -18,6 +18,12 @@ pub trait Clause<F: Source>: Sized  {
     fn not(self) -> Not<Self> {
         Not(self)
     }
+
+    #[inline]
+    fn taking<'a, A: 'a>(self, assignment: A) -> WithValue<Self, A>
+    where Self: Takes<'a, &'a A> {
+        WithValue(self, assignment)
+    }
 }
 
 impl<
