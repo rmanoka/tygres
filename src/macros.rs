@@ -9,6 +9,17 @@ macro_rules! seq {
 }
 
 #[macro_export]
+macro_rules! ref_seq {
+    ($first:ident, $($rest: ident),* $(,)*) => {
+        $crate::utils::Seq(ref $first, ref_seq!($($rest),+))
+    };
+    ($one:ident) => {
+        ref $one
+    };
+}
+
+
+#[macro_export]
 macro_rules! Seq {
     ($first:ty, $($rest: ty),* $(,)*) => {
         $crate::utils::Seq<$first, Seq!($($rest),+)>

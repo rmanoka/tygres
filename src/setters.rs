@@ -209,10 +209,6 @@ impl<C> ColWrap<C> {
     where Self: Takes<'a, &'a A> {
         OptionalSetter(self, assignment)
     }
-    // #[inline]
-    // pub fn if_some<A>(self, assignment: A) -> OptionalSetter<Self, A> {
-    //     OptionalSetter(self, assignment)
-    // }
 }
 
 pub trait Setter<'a> {
