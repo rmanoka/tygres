@@ -16,7 +16,7 @@ pub use self::{
     query::{Row, TypedRow, IntoSql, SqlInput},
     query::synchronous, query::asynchronous,
     source::{Source, Column},
-    getters::{Selection, ReturningClause, Makes, OptionalSelection},
+    getters::{Selection, ReturningClause, Makes, OptionalSelection, Getter},
     filter::{Clause, WhereClause, Equality},
     setters::{ColumnsSetter, OptionalSetter, Takes, OwnedSetter, Setter},
     order_by::{OrderByClause},

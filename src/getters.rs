@@ -57,14 +57,6 @@ pub trait Value: Sized {
     fn get<'a, R: Row>(g: &'a Self::Get, row: &'a R, idx: usize) -> (Self, usize);
 }
 
-// impl<'a, G, V> Makes<'a, V> for G
-// where V: Value<Get = G> {
-//     fn get<R: Row>(&'a self, row: &'a R, idx: usize) -> (V, usize) {
-//         V::get(self, row, idx)
-//     }
-// }
-
-
 pub trait ReturningClause<F: Source> {
     #[inline]
     fn push_returning(&self, src: &F, buf: &mut String);
@@ -110,4 +102,10 @@ impl<'a, S, A: Makes<'a, S>> Makes<'a, OptionalSelection<S>> for Option<A> {
             (None, idx)
         }
     }
+}
+
+pub trait Getter {
+    type Src: Source;
+    type Sel: Selection<Self::Src>;
+    fn getter() -> Self::Sel;
 }
