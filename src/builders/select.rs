@@ -46,27 +46,43 @@ impl Limiting for Wrap<Holder> {
 
 
 pub trait Offsetting {
+    type Set;
     fn push_offset(&self, buf: &mut String, idx: usize) -> usize;
+    fn to_setter(self) -> Self::Set;
 }
 
 impl Offsetting for Unit {
+    type Set = Unit;
     fn push_offset(&self, buf: &mut String, idx: usize) -> usize {
         idx
+    }
+    fn to_setter(self) -> Self::Set {
+        Unit
     }
 }
 
 impl Offsetting for Wrap<usize> {
+    type Set = Unit;
     fn push_offset(&self, buf: &mut String, idx: usize) -> usize {
         buf.push_str(&format!(" OFFSET {}", self.0));
         idx
     }
+    fn to_setter(self) -> Self::Set {
+        Unit
+    }
+
 }
 
 impl Offsetting for Wrap<Holder> {
+    type Set = Self;
     fn push_offset(&self, buf: &mut String, idx: usize) -> usize {
         buf.push_str(&format!(" OFFSET ${}", idx));
         idx + 1
     }
+    fn to_setter(self) -> Self::Set {
+        self
+    }
+
 }
 
 
@@ -76,15 +92,18 @@ impl<
     O: OrderByClause<F>, L: Limiting, Of: Offsetting
 > IntoSql for SelectBuilder<F, Wrap<S>, W, O, L, Of> {
 
-    type Set = SqlInput<Unit, W, L, Of>;
+    type Set = SqlInput<Unit, W, L::Set, Of::Set>;
     type Get = Wrap<S>;
 
-    fn push_sql(&self, buf: &mut String) -> usize {
+    fn push_sql(&mut self, buf: &mut String, idx: usize) -> usize {
         buf.push_str("SELECT ");
         self.selection.0.push_selection(&self.source, buf);
         buf.push_str(" FROM ");
         self.source.push_source(buf);
-        self.where_clause.push_where_clause(buf, 1)
+        let idx = self.where_clause.push_where_clause(buf, idx);
+        let idx = self.limit.push_limit(buf, idx);
+        let idx = self.offset.push_offset(buf, idx);
+        idx
     }
 
     fn into_types(self) -> (Self::Get, Self::Set) {
@@ -93,8 +112,8 @@ impl<
             SqlInput {
                 values: Unit,
                 where_clause: self.where_clause,
-                limit: self.limit,
-                offset: self.offset,
+                limit: self.limit.to_setter(),
+                offset: self.offset.to_setter(),
             }
         )
     }

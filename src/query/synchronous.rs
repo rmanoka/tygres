@@ -6,18 +6,19 @@ use postgres::{
 };
 
 pub trait Synchronous: IntoSql + Sized {
-    fn prepare(self, conn: &Connection)
+    fn prepare(mut self, conn: &Connection)
     -> Result<Statement<Self::Get, Self::Set>, Error> {
 
         let mut sql: String = String::with_capacity(0x1000);
-        let count = self.push_sql(&mut sql);
-        let types = self.into_types();
+        let idx = self.push_sql(&mut sql, 1);
+        let (getter, setter) = self.into_types();
+
         Ok(Statement{
             statement: conn.prepare(&sql)?,
-            getter: types.0,
-            setter: types.1,
-            setter_count: count,
+            getter, setter,
+            setter_count: idx - 1,
         })
+
     }
 }
 

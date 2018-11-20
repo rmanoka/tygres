@@ -12,11 +12,11 @@ builder! {
 
 
 pub trait InsValue<F: Source> {
-    fn push_values(&self, buf: &mut String, reps: usize) -> usize;
+    fn push_values(&self, buf: &mut String, reps: usize, idx: usize) -> usize;
 }
 
 impl<F: Source, S: ColumnsSetter<F>> InsValue<F> for Wrap<S> {
-    fn push_values(&self, buf: &mut String, reps: usize) -> usize {
+    fn push_values(&self, buf: &mut String, reps: usize, idx: usize) -> usize {
         if (reps == 0) {
             panic!("reps must be a positive integer");
         }
@@ -25,7 +25,7 @@ impl<F: Source, S: ColumnsSetter<F>> InsValue<F> for Wrap<S> {
             panic!("selection empty");
         }
         buf.push_str(") VALUES");
-        let mut idx = 1;
+        let mut idx = idx;
         for i in (0..reps) {
             if i != 0 {
                 buf.push_str(", ");
@@ -39,12 +39,12 @@ impl<F: Source, S: ColumnsSetter<F>> InsValue<F> for Wrap<S> {
 }
 
 impl<F: Source> InsValue<F> for Unit {
-    fn push_values(&self, buf: &mut String, reps: usize) -> usize {
+    fn push_values(&self, buf: &mut String, reps: usize, idx: usize) -> usize {
         if (reps != 1) {
             panic!("Only one row can be inserted with default values");
         }
         buf.push_str(" DEFAULT VALUES");
-        1
+        idx
     }
 }
 
@@ -55,12 +55,12 @@ where Wrap<V>: InsValue<F> {
     type Set = SqlInput<Wrap<Reps<V>>, Unit, Unit, Unit>;
     type Get = S;
 
-    fn push_sql(&self, buf: &mut String) -> usize {
+    fn push_sql(&mut self, buf: &mut String, idx: usize) -> usize {
         buf.push_str("INSERT INTO ");
         self.source.push_source(buf);
-        let idx = self.values.push_values(buf, self.reps);
+        let idx = self.values.push_values(buf, self.reps, idx);
         self.selection.push_returning(&self.source, buf);
-        idx - 1
+        idx
     }
 
     fn into_types(self) -> (S, Self::Set) {
@@ -82,10 +82,10 @@ for InsertBuilder<F, V, S, Unit> {
     type Set = SqlInput<V, Unit, Unit, Unit>;
     type Get = S;
 
-    fn push_sql(&self, buf: &mut String) -> usize {
+    fn push_sql(&mut self, buf: &mut String, idx: usize) -> usize {
         buf.push_str("INSERT INTO ");
         self.source.push_source(buf);
-        let idx = self.values.push_values(buf, 1);
+        let idx = self.values.push_values(buf, 1, idx);
         self.selection.push_returning(&self.source, buf);
         idx
     }

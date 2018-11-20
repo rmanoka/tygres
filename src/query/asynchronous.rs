@@ -7,17 +7,17 @@ use tokio_postgres::{
 
 pub trait Asynchronous: IntoSql + Sized {
 
-    fn prepare(self, cl: &mut Client)
+    fn prepare(mut self, cl: &mut Client)
     -> PrepareFuture<Self::Get, Self::Set> {
 
         let mut sql: String = String::with_capacity(0x1000);
-        let setter_count = self.push_sql(&mut sql);
-        let types = Some(self.into_types());
+        let idx = self.push_sql(&mut sql, 1);
+        let (get, set) = self.into_types();
 
         PrepareFuture {
             prepare: cl.prepare(&sql),
-            types,
-            setter_count,
+            types: Some((get, set)),
+            setter_count: idx - 1,
         }
     }
 }

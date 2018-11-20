@@ -24,7 +24,6 @@ impl<F: Source, S: ColumnsSetter<F>> UpdValue<F> for Wrap<S> {
         buf.push_str(") = ( ROW (");
         let idx = self.0.push_values(buf, idx);
         buf.push_str("))");
-        println!("update sql: {}", buf);
         idx
     }
 }
@@ -36,10 +35,10 @@ for UpdateBuilder<F, V, S, W> {
     type Set = SqlInput<V, W, Unit, Unit>;
     type Get = S;
 
-    fn push_sql(&self, buf: &mut String) ->  usize {
+    fn push_sql(&mut self, buf: &mut String, idx: usize) ->  usize {
         buf.push_str("UPDATE ");
         self.source.push_source(buf);
-        let idx = self.values.push_values(buf, 1);
+        let idx = self.values.push_values(buf, idx);
         self.selection.push_returning(&self.source, buf);
         self.where_clause.push_where_clause(buf, idx)
     }
