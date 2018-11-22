@@ -92,7 +92,7 @@ impl<
     O: OrderByClause<F>, L: Limiting, Of: Offsetting
 > IntoSql for SelectBuilder<F, Wrap<S>, W, O, L, Of> {
 
-    type Set = SqlInput<Unit, W, L::Set, Of::Set>;
+    type Set = SqlInput<Unit, W::Set, L::Set, Of::Set>;
     type Get = Wrap<S>;
 
     fn push_sql(&mut self, buf: &mut String, idx: usize) -> usize {
@@ -111,7 +111,7 @@ impl<
             self.selection,
             SqlInput {
                 values: Unit,
-                where_clause: self.where_clause,
+                where_clause: self.where_clause.into_setter(),
                 limit: self.limit.to_setter(),
                 offset: self.offset.to_setter(),
             }

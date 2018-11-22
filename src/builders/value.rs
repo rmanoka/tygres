@@ -4,7 +4,7 @@ use tygres_macros::builder;
 builder! {
     struct ValueBuilder {
         values: V as set(Val),
-        where_clause: W as filter(Cl),
+        where_clause: W as *filter(Cl),
         limit: L as limit(Lim),
         offset: O as offset(Off),
     }

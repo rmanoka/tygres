@@ -86,7 +86,7 @@ macro_rules! makes {
 #[macro_export]
 macro_rules! takes_json {
     ($name:ident, $ty:ty) => {
-        impl<'a> postgres::types::ToSql for $ty {
+        impl postgres::types::ToSql for $ty {
             fn to_sql(&self, ty: &postgres::types::Type, out: &mut Vec<u8>) -> Result<postgres::types::IsNull, Box<std::error::Error + Sync + Send>> {
                 postgres::types::Json(self).to_sql(ty, out)
             }
@@ -131,7 +131,7 @@ macro_rules! With {
 #[macro_export]
 macro_rules! Opt {
     ($val:ty, $col:ty) => {
-        $crate::OptionalSetter<
+        $crate::setters::OptValue<
             $crate::utils::ColWrap<$col>,
             $val>
     }

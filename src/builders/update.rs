@@ -32,15 +32,16 @@ impl<F: Source, S: ColumnsSetter<F>> UpdValue<F> for Wrap<S> {
 impl<F: Source, V: UpdValue<F>, S: ReturningClause<F>, W: WhereClause<F>> IntoSql
 for UpdateBuilder<F, V, S, W> {
 
-    type Set = SqlInput<V, W, Unit, Unit>;
+    type Set = SqlInput<V, W::Set, Unit, Unit>;
     type Get = S;
 
     fn push_sql(&mut self, buf: &mut String, idx: usize) ->  usize {
         buf.push_str("UPDATE ");
         self.source.push_source(buf);
         let idx = self.values.push_values(buf, idx);
+        let idx = self.where_clause.push_where_clause(buf, idx);
         self.selection.push_returning(&self.source, buf);
-        self.where_clause.push_where_clause(buf, idx)
+        idx
     }
 
     fn into_types(self) -> (Self::Get, Self::Set) {
@@ -48,7 +49,7 @@ for UpdateBuilder<F, V, S, W> {
             self.selection,
             SqlInput {
                 values: self.values,
-                where_clause: self.where_clause,
+                where_clause: self.where_clause.into_setter(),
                 limit: Unit,
                 offset: Unit,
             }

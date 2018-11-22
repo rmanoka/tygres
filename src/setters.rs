@@ -121,12 +121,12 @@ impl<
     }
 }
 
-pub struct OptionalSetter<S, A>(pub S, pub A);
+pub struct OptValue<S, A>(pub S, pub A);
 
 impl<
     'a, F: Source, A: 'a,
     S: ColumnsSetter<F>,
-> ColumnsSetter<F> for OptionalSetter<S, Option<A>> {
+> ColumnsSetter<F> for OptValue<S, Option<A>> {
     #[inline]
     fn push_selection(&self, buf: &mut String) -> bool {
         match self.1 {
@@ -150,7 +150,7 @@ impl<
 impl<
     'a, 'c, F: Source, A,
     S: ColumnsSetter<F>,
-> ColumnsSetter<F> for OptionalSetter<S, &'c Option<A>> {
+> ColumnsSetter<F> for OptValue<S, &'c Option<A>> {
     #[inline]
     fn push_selection(&self, buf: &mut String) -> bool {
         match self.1 {
@@ -171,7 +171,7 @@ impl<
     }
 }
 
-impl<'a, S, A: 'a> Takes<'a, Unit> for OptionalSetter<S, Option<A>>
+impl<'a, S, A: 'a> Takes<'a, Unit> for OptValue<S, Option<A>>
 where S: Takes<'a, &'a A> {
     #[inline]
     fn push_values<'b>(&'a self, _values: Unit, buf: &'b mut Vec<&'a ToSql>) {
@@ -181,7 +181,7 @@ where S: Takes<'a, &'a A> {
     }
 }
 
-impl<'a, 'c, S, A> Takes<'a, Unit> for OptionalSetter<S, &'c Option<A>>
+impl<'a, 'c, S, A> Takes<'a, Unit> for OptValue<S, &'c Option<A>>
 where S: for<'b> Takes<'b, &'b A> {
     #[inline]
     fn push_values<'b>(&'a self, _values: Unit, buf: &'b mut Vec<&'a ToSql>) {
@@ -199,24 +199,36 @@ impl<C> ColWrap<C> {
     }
 
     #[inline]
-    pub fn if_some<'a, A: 'a>(self, assignment: Option<A>) -> OptionalSetter<Self, Option<A>>
+    pub fn if_some<'a, A: 'a>(self, assignment: Option<A>) -> OptValue<Self, Option<A>>
     where Self: Takes<'a, &'a A> {
-        OptionalSetter(self, assignment)
+        OptValue(self, assignment)
     }
 
     #[inline]
-    pub fn if_some_ref<'a, A: 'a>(self, assignment: &'a Option<A>) -> OptionalSetter<Self, &'a Option<A>>
+    pub fn if_some_ref<'a, A: 'a>(self, assignment: &'a Option<A>) -> OptValue<Self, &'a Option<A>>
     where Self: Takes<'a, &'a A> {
-        OptionalSetter(self, assignment)
+        OptValue(self, assignment)
     }
 }
 
-pub trait Setter<'a> {
+pub trait RefSetter<'a> {
     type Out: Takes<'a, Unit> + 'a;
     fn as_setter(&'a self) -> Self::Out;
 }
 
-pub trait OwnedSetter {
+pub trait ValSetter {
     type Out: for<'a> Takes<'a, Unit>;
     fn as_setter(self) -> Self::Out;
+}
+
+pub trait Setter<'a> {
+    type Val;
+    type Set: Takes<'a, Self::Val>;
+
+    fn setter() -> Self::Set;
+    fn as_value(&'a self) -> Self::Val;
+}
+
+pub trait ImpSetter: for<'a> Setter<'a> {
+    type Set: for<'a> Takes<'a, <Self as Setter<'a>>::Val>;
 }

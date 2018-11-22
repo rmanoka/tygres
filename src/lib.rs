@@ -3,13 +3,13 @@ pub mod macros;
 
 pub mod utils;
 
-mod query;
-mod source;
-mod getters;
-mod order_by;
-mod filter;
-mod setters;
-mod builders;
+pub mod query;
+pub mod source;
+pub mod getters;
+pub mod order_by;
+pub mod filter;
+pub mod setters;
+pub mod builders;
 
 pub use self::{
     utils::{Seq},
@@ -18,7 +18,7 @@ pub use self::{
     source::{Source, Column},
     getters::{Selection, ReturningClause, Makes, OptionalSelection, Getter},
     filter::{Clause, WhereClause, Equality},
-    setters::{ColumnsSetter, OptionalSetter, Takes, OwnedSetter, Setter},
+    setters::{ColumnsSetter, Takes, Setter, RefSetter, ValSetter},
     order_by::{OrderByClause},
     builders::*,
 };

@@ -12,7 +12,7 @@ builder! {
 impl<F: Source, S: ReturningClause<F>, W: WhereClause<F>> IntoSql
 for DeleteBuilder<F, S, W> {
 
-    type Set = SqlInput<Unit, W, Unit, Unit>;
+    type Set = SqlInput<Unit, W::Set, Unit, Unit>;
     type Get = S;
 
     fn push_sql(&mut self, buf: &mut String, idx: usize) -> usize {
@@ -28,7 +28,7 @@ for DeleteBuilder<F, S, W> {
             self.selection,
             SqlInput {
                 values: Unit,
-                where_clause: self.where_clause,
+                where_clause: self.where_clause.into_setter(),
                 limit: Unit,
                 offset: Unit,
             },

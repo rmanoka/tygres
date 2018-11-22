@@ -2,7 +2,9 @@ use crate::{*, utils::*};
 use postgres::types::ToSql;
 
 pub trait Clause<F: Source>: Sized  {
+    type Set;
     fn push_clause(&mut self, buf: &mut String, idx: usize) -> usize;
+    fn into_setter(self) -> Self::Set;
 
     #[inline]
     fn and<C: Clause<F>>(self, other: C) -> And<Self, C> {
@@ -21,7 +23,7 @@ pub trait Clause<F: Source>: Sized  {
 
     #[inline]
     fn taking<'a, A: 'a>(self, assignment: A) -> WithValue<Self, A>
-    where Self: Takes<'a, &'a A> {
+    where Self::Set: Takes<'a, &'a A> {
         WithValue(self, assignment)
     }
 }
@@ -33,6 +35,11 @@ impl<
     #[inline]
     fn push_clause(&mut self, buf: &mut String, idx: usize) -> usize {
         self.0.push_clause(buf, idx)
+    }
+
+    type Set = WithValue<S::Set, A>;
+    fn into_setter(self) -> Self::Set {
+        WithValue(self.0.into_setter(), self.1)
     }
 }
 
@@ -49,13 +56,9 @@ impl<F: Source, L: Clause<F>, R: Clause<F>> Clause<F> for And<L, R> {
         buf.push_str(")");
         idx
     }
-}
-
-impl<'a, L, R, A: Takes<'a, L>, B: Takes<'a, R>> Takes<'a, Seq<L, R>> for And<A, B> {
-    #[inline]
-    fn push_values<'b>(&'a self, values: Seq<L, R>, buf: &'b mut Vec<&'a ToSql>) {
-        self.0.push_values(values.0, buf);
-        self.1.push_values(values.1, buf);
+    type Set = Seq![L::Set, R::Set];
+    fn into_setter(self) -> Self::Set {
+        seq![self.0.into_setter(), self.1.into_setter()]
     }
 }
 
@@ -72,16 +75,11 @@ impl<F: Source, L: Clause<F>, R: Clause<F>> Clause<F> for Or<L, R> {
         buf.push_str(" )");
         idx
     }
-}
-
-impl<'a, L, R, A: Takes<'a, L>, B: Takes<'a, R>> Takes<'a, Seq<L, R>> for Or<A, B> {
-    #[inline]
-    fn push_values<'b>(&'a self, values: Seq<L, R>, buf: &'b mut Vec<&'a ToSql>) {
-        self.0.push_values(values.0, buf);
-        self.1.push_values(values.1, buf);
+    type Set = Seq![L::Set, R::Set];
+    fn into_setter(self) -> Self::Set {
+        seq![self.0.into_setter(), self.1.into_setter()]
     }
 }
-
 
 pub struct Not<C>(C);
 
@@ -93,19 +91,17 @@ impl<F: Source, C: Clause<F>> Clause<F> for Not<C> {
         buf.push_str(" )");
         idx
     }
-}
-
-impl<'a, A, C: Takes<'a, A>> Takes<'a, A> for Not<C> {
-    #[inline]
-    fn push_values<'b>(&'a self, values: A, buf: &'b mut Vec<&'a ToSql>) {
-        self.0.push_values(values, buf);
+    type Set = C::Set;
+    fn into_setter(self) -> Self::Set {
+        self.0.into_setter()
     }
 }
-
 
 pub trait WhereClause<F: Source>  {
     #[inline]
     fn push_where_clause(&mut self, buf: &mut String, idx: usize) -> usize;
+    type Set;
+    fn into_setter(self) -> Self::Set;
 }
 
 impl<F: Source, C: Clause<F>> WhereClause<F> for Wrap<C> {
@@ -114,6 +110,8 @@ impl<F: Source, C: Clause<F>> WhereClause<F> for Wrap<C> {
         buf.push_str(" WHERE ");
         self.0.push_clause(buf, idx)
     }
+    type Set = C::Set;
+    fn into_setter(self) -> Self::Set { self.0.into_setter() }
 }
 
 impl<F: Source> WhereClause<F> for Unit {
@@ -121,16 +119,12 @@ impl<F: Source> WhereClause<F> for Unit {
     fn push_where_clause(&mut self, _buf: &mut String, idx: usize) -> usize {
         idx
     }
+    type Set = Unit;
+    fn into_setter(self) -> Self::Set { Unit }
 }
 
 pub struct Equality<C>(C);
 pub struct IsNull<C>(C);
-
-pub struct InSubQuery<C, Q: IntoSql>(C, StoredQuery<Q>);
-pub enum StoredQuery<Q: IntoSql> {
-    Query(Q),
-    Setter(Q::Set),
-}
 
 impl<C> ColWrap<C> {
     pub fn equality<F: Source>(self) -> Equality<Self>
@@ -143,8 +137,11 @@ impl<C> ColWrap<C> {
         IsNull(self)
     }
 
-    pub fn in_query<Q: IntoSql<Get=Wrap<Self>>>(self, query: Q) -> InSubQuery<Self, Q> {
-        InSubQuery(self, StoredQuery::Query(query))
+    pub fn in_query<'a, Q: IntoSql<Get=Wrap<Self>>>(
+            self, query: Q, lock: &'a str) -> InSubQuery<'a, Self, Q> {
+
+        InSubQuery(self, query, lock)
+
     }
 }
 
@@ -156,12 +153,9 @@ impl<F: Source, C: Column<F>> Clause<F> for Equality<ColWrap<C>> {
         buf.push_str(&format!("${}", idx));
         idx + 1
     }
-}
-
-impl<'a, S, T: Takes<'a, S>> Takes<'a, S> for Equality<T> {
-    #[inline]
-    fn push_values<'b>(&'a self, values: S, buf: &'b mut Vec<&'a ToSql>) {
-        self.0.push_values(values, buf);
+    type Set = ColWrap<C>;
+    fn into_setter(self) -> Self::Set {
+        self.0
     }
 }
 
@@ -172,55 +166,30 @@ impl<F: Source, C: Column<F>> Clause<F> for IsNull<ColWrap<C>> {
         buf.push_str(" IS NULL");
         idx
     }
-}
-
-impl<'a, T> Takes<'a, Unit> for IsNull<T> {
-    #[inline]
-    fn push_values<'b>(&'a self, _values: Unit, _buf: &'b mut Vec<&'a ToSql>) {
+    type Set = Unit;
+    fn into_setter(self) -> Self::Set {
+        Unit
     }
 }
+
+pub struct InSubQuery<'a, C, Q: IntoSql>(C, Q, &'a str);
 
 impl<'a, F: Source, C: Column<F>,
         Q: IntoSql<Get = Wrap<ColWrap<C>>>>
-            Clause<F> for InSubQuery<ColWrap<C>, Q> {
+            Clause<F> for InSubQuery<'a, ColWrap<C>, Q> {
 
     fn push_clause(&mut self, buf: &mut String, idx: usize) -> usize {
-        use self::StoredQuery::*;
-        use std::{mem::replace, ptr};
-        match self.1 {
-            Query(ref mut query) => {
-                (self.0).0.push_name(buf);
-                buf.push_str(" IN ( ");
-                let idx = query.push_sql(buf, idx);
-                buf.push_str(" FOR UPDATE )");
-
-                // Replacing Stored object in-place
-                unsafe {
-                    let query = ptr::read(query);
-                    let types = query.into_types();
-                    ptr::write(&mut self.1, Setter(types.1));
-                }
-
-                idx
-            },
-            _ => { panic!("push_clause may not be called more than once on sub-query clauses!"); }
-        }
+        (self.0).0.push_name(buf);
+        buf.push_str(" IN ( ");
+        let idx = self.1.push_sql(buf, idx);
+        buf.push_str(self.2);
+        buf.push_str(")");
+        idx
     }
 
-}
-
-impl<'a, A, C, S: Takes<'a, A> + 'a,
-        Q: IntoSql<Get = Wrap<ColWrap<C>>, Set = S>>
-        Takes<'a, A> for InSubQuery<ColWrap<C>, Q> {
-
-    #[inline]
-    fn push_values<'b>(&'a self, values: A, buf: &'b mut Vec<&'a ToSql>) {
-        use self::StoredQuery::*;
-        match self.1 {
-            Setter(ref setter) => setter.push_values(values, buf),
-            _ => panic!("push_values called before push_clause"),
-        }
+    type Set = Q::Set;
+    fn into_setter(self) -> Self::Set {
+        self.1.into_types().1
     }
-
 }
 
