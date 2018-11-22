@@ -18,7 +18,7 @@ impl<F: Source, S: ColumnsSetter<F>> UpdValue<F> for Wrap<S> {
     fn push_values(&self, buf: &mut String, idx: usize) -> usize {
         buf.push_str(" SET ");
         buf.push_str("(");
-        if (!self.0.push_selection(buf)) {
+        if !self.0.push_selection(buf) {
             panic!("selection empty");
         }
         buf.push_str(") = ( ROW (");

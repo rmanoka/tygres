@@ -95,7 +95,7 @@ impl<F: Source, S: Selection<F>> Selection<F> for OptionalSelection<S> {
 
 impl<'a, S, A: Makes<'a, S>> Makes<'a, OptionalSelection<S>> for Option<A> {
     fn get<R: Row>(s: &'a OptionalSelection<S>, row: &'a R, idx: usize) -> (Self, usize) {
-        if (s.1) {
+        if s.1 {
             let (obj, idx) = Makes::get(&s.0, row, idx);
             (Some(obj), idx)
         } else {

@@ -23,7 +23,7 @@ impl Limiting for Unit {
     type Set = Unit;
     fn to_setter(self) -> Self::Set { self }
 
-    fn push_limit(&self, buf: &mut String, idx: usize) -> usize { idx }
+    fn push_limit(&self, _buf: &mut String, idx: usize) -> usize { idx }
 }
 
 impl Limiting for Wrap<usize> {
@@ -53,7 +53,7 @@ pub trait Offsetting {
 
 impl Offsetting for Unit {
     type Set = Unit;
-    fn push_offset(&self, buf: &mut String, idx: usize) -> usize {
+    fn push_offset(&self, _buf: &mut String, idx: usize) -> usize {
         idx
     }
     fn to_setter(self) -> Self::Set {

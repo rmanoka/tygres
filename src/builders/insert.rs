@@ -17,16 +17,16 @@ pub trait InsValue<F: Source> {
 
 impl<F: Source, S: ColumnsSetter<F>> InsValue<F> for Wrap<S> {
     fn push_values(&self, buf: &mut String, reps: usize, idx: usize) -> usize {
-        if (reps == 0) {
+        if reps == 0 {
             panic!("reps must be a positive integer");
         }
         buf.push_str("(");
-        if (!self.0.push_selection(buf)) {
+        if !self.0.push_selection(buf) {
             panic!("selection empty");
         }
         buf.push_str(") VALUES");
         let mut idx = idx;
-        for i in (0..reps) {
+        for i in 0..reps {
             if i != 0 {
                 buf.push_str(", ");
             }
@@ -40,7 +40,7 @@ impl<F: Source, S: ColumnsSetter<F>> InsValue<F> for Wrap<S> {
 
 impl<F: Source> InsValue<F> for Unit {
     fn push_values(&self, buf: &mut String, reps: usize, idx: usize) -> usize {
-        if (reps != 1) {
+        if reps != 1 {
             panic!("Only one row can be inserted with default values");
         }
         buf.push_str(" DEFAULT VALUES");
