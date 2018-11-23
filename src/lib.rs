@@ -18,7 +18,7 @@ pub use self::{
     source::{Source, Column},
     getters::{Selection, ReturningClause, Makes, OptionalSelection, Getter},
     filter::{Clause, WhereClause, Equality},
-    setters::{ColumnsSetter, Takes, Setter, RefSetter, ValSetter},
+    setters::{ColumnsSetter, Takes, HasSetter, RefSetter, ValSetter},
     order_by::{OrderByClause},
     builders::*,
 };

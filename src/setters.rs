@@ -54,6 +54,18 @@ impl<'a, A, B, S: Takes<'a, A>, T: Takes<'a, B>> Takes<'a, Seq<A, B>> for Seq<S,
     }
 }
 
+impl<'a,
+        A, B,
+        S: Takes<'a, &'a A>,
+        T: Takes<'a, &'a B>> Takes<'a, &'a Seq<A, B>> for Seq<S, T> {
+    #[inline]
+    fn push_values<'b>(&'a self, values: &'a Seq<A, B>, buf: &'b mut Vec<&'a ToSql>) {
+        self.0.push_values(&values.0, buf);
+        self.1.push_values(&values.1, buf);
+    }
+}
+
+
 impl<'a, A: 'a, S: Takes<'a, A>, I: IntoIterator<Item = A>> Takes<'a, I> for Reps<S> {
     #[inline]
     fn push_values<'b>(&'a self, iter: I, buf: &'b mut Vec<&'a ToSql>) {
@@ -62,18 +74,6 @@ impl<'a, A: 'a, S: Takes<'a, A>, I: IntoIterator<Item = A>> Takes<'a, I> for Rep
         }
     }
 }
-
-// use std::op[]
-// impl<'a, A: 'a, S: Takes<'a, &'a A>> Takes<'a, &'a [A]> for Reps<S> {
-//     #[inline]
-//     fn push_values<'b>(&'a self, slice: &'a [A], buf: &'b mut Vec<&'a ToSql>) {
-//         for value in slice {
-//             self.1.push_values(value, buf);
-//         }
-//     }
-// }
-
-
 
 impl<'a> Takes<'a, Unit> for Unit {
     #[inline]
@@ -221,14 +221,9 @@ pub trait ValSetter {
     fn as_setter(self) -> Self::Out;
 }
 
-pub trait Setter<'a> {
+pub trait HasSetter<'a> {
     type Val;
     type Set: Takes<'a, Self::Val>;
-
     fn setter() -> Self::Set;
     fn as_value(&'a self) -> Self::Val;
-}
-
-pub trait ImpSetter: for<'a> Setter<'a> {
-    type Set: for<'a> Takes<'a, <Self as Setter<'a>>::Val>;
 }
