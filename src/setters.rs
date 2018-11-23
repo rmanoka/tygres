@@ -29,26 +29,26 @@ impl<
 }
 
 pub trait Takes<'a, S> {
-    fn push_values<'b>(&'a self, values: S, buf: &'b mut Vec<&'a ToSql>);
+    fn push_values<'b:'a>(&'b self, values: S, buf: &mut Vec<&'a ToSql>);
 }
 
 impl<'a, S, T: Takes<'a, S>> Takes<'a, Wrap<S>> for Wrap<T> {
     #[inline]
-    fn push_values<'b>(&'a self, values: Wrap<S>, buf: &'b mut Vec<&'a ToSql>) {
+    fn push_values<'b:'a>(&'b self, values: Wrap<S>, buf: &mut Vec<&'a ToSql>) {
         self.0.push_values(values.0, buf);
     }
 }
 
 impl<'a, S, T: Takes<'a, S>> Takes<'a, S> for ColWrap<T> {
     #[inline]
-    fn push_values<'b>(&'a self, values: S, buf: &'b mut Vec<&'a ToSql>) {
+    fn push_values<'b:'a>(&'b self, values: S, buf: &mut Vec<&'a ToSql>) {
         self.0.push_values(values, buf);
     }
 }
 
 impl<'a, A, B, S: Takes<'a, A>, T: Takes<'a, B>> Takes<'a, Seq<A, B>> for Seq<S, T> {
     #[inline]
-    fn push_values<'b>(&'a self, values: Seq<A, B>, buf: &'b mut Vec<&'a ToSql>) {
+    fn push_values<'b:'a>(&'b self, values: Seq<A, B>, buf: &mut Vec<&'a ToSql>) {
         self.0.push_values(values.0, buf);
         self.1.push_values(values.1, buf);
     }
@@ -59,7 +59,7 @@ impl<'a,
         S: Takes<'a, &'a A>,
         T: Takes<'a, &'a B>> Takes<'a, &'a Seq<A, B>> for Seq<S, T> {
     #[inline]
-    fn push_values<'b>(&'a self, values: &'a Seq<A, B>, buf: &'b mut Vec<&'a ToSql>) {
+    fn push_values<'b:'a>(&'b self, values: &'a Seq<A, B>, buf: &mut Vec<&'a ToSql>) {
         self.0.push_values(&values.0, buf);
         self.1.push_values(&values.1, buf);
     }
@@ -68,7 +68,7 @@ impl<'a,
 
 impl<'a, A: 'a, S: Takes<'a, A>, I: IntoIterator<Item = A>> Takes<'a, I> for Reps<S> {
     #[inline]
-    fn push_values<'b>(&'a self, iter: I, buf: &'b mut Vec<&'a ToSql>) {
+    fn push_values<'b:'a>(&'b self, iter: I, buf: &mut Vec<&'a ToSql>) {
         for value in iter {
             self.1.push_values(value, buf);
         }
@@ -77,19 +77,19 @@ impl<'a, A: 'a, S: Takes<'a, A>, I: IntoIterator<Item = A>> Takes<'a, I> for Rep
 
 impl<'a> Takes<'a, Unit> for Unit {
     #[inline]
-    fn push_values<'b>(&'a self, _values: Unit, _buf: &'b mut Vec<&'a ToSql>) {}
+    fn push_values<'b:'a>(&'b self, _values: Unit, _buf: &mut Vec<&'a ToSql>) {}
 }
 
 impl<'a, S: Takes<'a, Unit>> Takes<'a, Unit> for Wrap<S> {
     #[inline]
-    fn push_values<'b>(&'a self, values: Unit, buf: &'b mut Vec<&'a ToSql>) {
+    fn push_values<'b:'a>(&'b self, values: Unit, buf: &mut Vec<&'a ToSql>) {
         self.0.push_values(values, buf);
     }
 }
 
 impl<'a, S: Takes<'a, Unit>, T: Takes<'a, Unit>> Takes<'a, Unit> for Seq<S, T> {
     #[inline]
-    fn push_values<'b>(&'a self, _values: Unit, buf: &'b mut Vec<&'a ToSql>) {
+    fn push_values<'b:'a>(&'b self, _values: Unit, buf: &mut Vec<&'a ToSql>) {
         self.0.push_values(Unit, buf);
         self.1.push_values(Unit, buf);
     }
@@ -99,7 +99,7 @@ impl<'a, S: Takes<'a, Unit>, T: Takes<'a, Unit>> Takes<'a, Unit> for Seq<S, T> {
 impl<'a, S, A: 'a> Takes<'a, Unit> for WithValue<S, A>
 where S: Takes<'a, &'a A> {
     #[inline]
-    fn push_values<'b>(&'a self, _values: Unit, buf: &'b mut Vec<&'a ToSql>) {
+    fn push_values<'b:'a>(&'b self, _values: Unit, buf: &mut Vec<&'a ToSql>) {
         self.0.push_values(&self.1, buf);
     }
 }
@@ -174,7 +174,7 @@ impl<
 impl<'a, S, A: 'a> Takes<'a, Unit> for OptValue<S, Option<A>>
 where S: Takes<'a, &'a A> {
     #[inline]
-    fn push_values<'b>(&'a self, _values: Unit, buf: &'b mut Vec<&'a ToSql>) {
+    fn push_values<'b:'a>(&'b self, _values: Unit, buf: &mut Vec<&'a ToSql>) {
         if let Some(ref val) = self.1 {
             self.0.push_values(val, buf);
         }
@@ -184,7 +184,7 @@ where S: Takes<'a, &'a A> {
 impl<'a, 'c, S, A> Takes<'a, Unit> for OptValue<S, &'c Option<A>>
 where S: for<'b> Takes<'b, &'b A> {
     #[inline]
-    fn push_values<'b>(&'a self, _values: Unit, buf: &'b mut Vec<&'a ToSql>) {
+    fn push_values<'b:'a>(&'b self, _values: Unit, buf: &mut Vec<&'a ToSql>) {
         if let Some(ref val) = self.1 {
             self.0.push_values(val, buf);
         }

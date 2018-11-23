@@ -27,7 +27,7 @@ impl<
     A: Takes<'a, V>, B: Takes<'a, W>, C: Takes<'a, L>, D: Takes<'a, O>
 > Takes<'a, ValueBuilder<V, W, L, O>> for SqlInput<A, B, C, D> {
     #[inline]
-    fn push_values<'b>(&'a self, values: ValueBuilder<V, W, L, O>, buf: &'b mut Vec<&'a ToSql>) {
+    fn push_values<'b:'a>(&'b self, values: ValueBuilder<V, W, L, O>, buf: &mut Vec<&'a ToSql>) {
         self.values.push_values(values.values, buf);
         self.where_clause.push_values(values.where_clause, buf);
         self.limit.push_values(values.limit, buf);

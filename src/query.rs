@@ -15,9 +15,9 @@ impl<
     L: Takes<'a, Unit>,
     O: Takes<'a, Unit>,
 > Takes<'a, Unit> for SqlInput<V, W, L, O> {
-    fn push_values<'b>(&'a self, _values: Unit, buf: &'b mut Vec<&'a ToSql>) {
+    fn push_values<'b:'a>(&'b self, _values: Unit, buf: &mut Vec<&'a ToSql>) {
         self.push_values(
-            ValueBuilder::new(), buf
+            Unit, buf
         );
     }
 }

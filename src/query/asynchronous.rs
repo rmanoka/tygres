@@ -62,7 +62,7 @@ pub struct Prepared<Get, Set> {
 
 impl<Get, Set> Prepared<Get, Set> {
     pub fn execute_with<'a, A>(&'a self, cl: &mut Client, assignment: A) -> Execute
-    where Set: Takes<'a, A> {
+    where Set: for<'b> Takes<'b, A> {
 
         let mut values = Vec::with_capacity(self.setter_count);
         self.setter.push_values(assignment, &mut values);
@@ -83,13 +83,13 @@ impl<Get, Set> Prepared<Get, Set> {
     }
 }
 
-impl<'a, Get, Set> Prepared<Get, Set>
-where Set: Takes<'a, Unit> {
-    pub fn execute(&'a self, cl: &mut Client) -> Execute {
+impl<Get, Set> Prepared<Get, Set>
+where Set: for<'a> Takes<'a, Unit> {
+    pub fn execute(&self, cl: &mut Client) -> Execute {
         self.execute_with(cl, Unit)
     }
 
-    pub fn query(&'a self, cl: &mut Client) -> QueryStream<'a, Get> {
+    pub fn query<'a>(&'a self, cl: &mut Client) -> QueryStream<'a, Get> {
         self.query_with(cl, Unit)
     }
 }

@@ -65,7 +65,7 @@ macro_rules! takes {
     ($name:ident, $ty:ty) => {
         impl<'a> $crate::Takes<'a, &'a $ty> for $name {
             #[inline]
-            fn push_values<'b>(&'a self, values: &'a $ty, buf: &'b mut Vec<&'a postgres::types::ToSql>) {
+            fn push_values<'b:'a>(&'b self, values: &'a $ty, buf: &mut Vec<&'a postgres::types::ToSql>) {
                 buf.push(values);
             }
         }
