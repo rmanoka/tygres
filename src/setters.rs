@@ -223,7 +223,17 @@ pub trait ValSetter {
 
 pub trait HasSetter<'a> {
     type Val;
+    // type ValOwned;
     type Set: Takes<'a, Self::Val>;
     fn setter() -> Self::Set;
     fn as_value(&'a self) -> Self::Val;
+    // fn into_value(self) -> Self::ValOwned;
 }
+
+pub trait HasOwnedSetter {
+    type Val;
+    type Set: for<'a> Takes<'a, &'a Self::Val>;
+    fn setter() -> Self::Set;
+    fn into_value(self) -> Self::Val;
+}
+
