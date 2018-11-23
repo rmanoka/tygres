@@ -49,7 +49,7 @@ for UpdateBuilder<F, V, S, W> {
             self.selection,
             SqlInput {
                 values: self.values,
-                where_clause: self.where_clause.into_setter(),
+                where_clause: self.where_clause.into_types(),
                 limit: Unit,
                 offset: Unit,
             }

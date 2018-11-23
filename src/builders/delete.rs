@@ -28,7 +28,7 @@ for DeleteBuilder<F, S, W> {
             self.selection,
             SqlInput {
                 values: Unit,
-                where_clause: self.where_clause.into_setter(),
+                where_clause: self.where_clause.into_types(),
                 limit: Unit,
                 offset: Unit,
             },

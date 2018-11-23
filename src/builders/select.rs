@@ -111,7 +111,7 @@ impl<
             self.selection,
             SqlInput {
                 values: Unit,
-                where_clause: self.where_clause.into_setter(),
+                where_clause: self.where_clause.into_types(),
                 limit: self.limit.to_setter(),
                 offset: self.offset.to_setter(),
             }

@@ -4,7 +4,7 @@ use postgres::types::ToSql;
 pub trait Clause<F: Source>: Sized  {
     type Set;
     fn push_clause(&mut self, buf: &mut String, idx: usize) -> usize;
-    fn into_setter(self) -> Self::Set;
+    fn into_types(self) -> Self::Set;
 
     #[inline]
     fn and<C: Clause<F>>(self, other: C) -> And<Self, C> {
@@ -38,8 +38,8 @@ impl<
     }
 
     type Set = WithValue<S::Set, A>;
-    fn into_setter(self) -> Self::Set {
-        WithValue(self.0.into_setter(), self.1)
+    fn into_types(self) -> Self::Set {
+        WithValue(self.0.into_types(), self.1)
     }
 }
 
@@ -57,8 +57,8 @@ impl<F: Source, L: Clause<F>, R: Clause<F>> Clause<F> for And<L, R> {
         idx
     }
     type Set = Seq![L::Set, R::Set];
-    fn into_setter(self) -> Self::Set {
-        seq![self.0.into_setter(), self.1.into_setter()]
+    fn into_types(self) -> Self::Set {
+        seq![self.0.into_types(), self.1.into_types()]
     }
 }
 
@@ -76,8 +76,8 @@ impl<F: Source, L: Clause<F>, R: Clause<F>> Clause<F> for Or<L, R> {
         idx
     }
     type Set = Seq![L::Set, R::Set];
-    fn into_setter(self) -> Self::Set {
-        seq![self.0.into_setter(), self.1.into_setter()]
+    fn into_types(self) -> Self::Set {
+        seq![self.0.into_types(), self.1.into_types()]
     }
 }
 
@@ -92,8 +92,8 @@ impl<F: Source, C: Clause<F>> Clause<F> for Not<C> {
         idx
     }
     type Set = C::Set;
-    fn into_setter(self) -> Self::Set {
-        self.0.into_setter()
+    fn into_types(self) -> Self::Set {
+        self.0.into_types()
     }
 }
 
@@ -101,7 +101,7 @@ pub trait WhereClause<F: Source>  {
     #[inline]
     fn push_where_clause(&mut self, buf: &mut String, idx: usize) -> usize;
     type Set;
-    fn into_setter(self) -> Self::Set;
+    fn into_types(self) -> Self::Set;
 }
 
 impl<F: Source, C: Clause<F>> WhereClause<F> for Wrap<C> {
@@ -111,7 +111,7 @@ impl<F: Source, C: Clause<F>> WhereClause<F> for Wrap<C> {
         self.0.push_clause(buf, idx)
     }
     type Set = C::Set;
-    fn into_setter(self) -> Self::Set { self.0.into_setter() }
+    fn into_types(self) -> Self::Set { self.0.into_types() }
 }
 
 impl<F: Source> WhereClause<F> for Unit {
@@ -120,7 +120,7 @@ impl<F: Source> WhereClause<F> for Unit {
         idx
     }
     type Set = Unit;
-    fn into_setter(self) -> Self::Set { Unit }
+    fn into_types(self) -> Self::Set { Unit }
 }
 
 pub struct Equality<C>(C);
@@ -154,7 +154,7 @@ impl<F: Source, C: Column<F>> Clause<F> for Equality<ColWrap<C>> {
         idx + 1
     }
     type Set = ColWrap<C>;
-    fn into_setter(self) -> Self::Set {
+    fn into_types(self) -> Self::Set {
         self.0
     }
 }
@@ -167,7 +167,7 @@ impl<F: Source, C: Column<F>> Clause<F> for IsNull<ColWrap<C>> {
         idx
     }
     type Set = Unit;
-    fn into_setter(self) -> Self::Set {
+    fn into_types(self) -> Self::Set {
         Unit
     }
 }
@@ -188,7 +188,7 @@ impl<'a, F: Source, C: Column<F>,
     }
 
     type Set = Q::Set;
-    fn into_setter(self) -> Self::Set {
+    fn into_types(self) -> Self::Set {
         self.1.into_types().1
     }
 }
