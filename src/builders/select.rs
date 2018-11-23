@@ -95,7 +95,7 @@ impl<
     type Set = SqlInput<Unit, W::Set, L::Set, Of::Set>;
     type Get = Wrap<S>;
 
-    fn push_sql(&mut self, buf: &mut String, idx: usize) -> usize {
+    fn push_sql(&self, buf: &mut String, idx: usize) -> usize {
         buf.push_str("SELECT ");
         self.selection.0.push_selection(&self.source, buf);
         buf.push_str(" FROM ");

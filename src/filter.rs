@@ -3,7 +3,7 @@ use postgres::types::ToSql;
 
 pub trait Clause<F: Source>: Sized  {
     type Set;
-    fn push_clause(&mut self, buf: &mut String, idx: usize) -> usize;
+    fn push_clause(&self, buf: &mut String, idx: usize) -> usize;
     fn into_types(self) -> Self::Set;
 
     #[inline]
@@ -33,7 +33,7 @@ impl<
     S: Clause<F>,
 > Clause<F> for WithValue<S, A> {
     #[inline]
-    fn push_clause(&mut self, buf: &mut String, idx: usize) -> usize {
+    fn push_clause(&self, buf: &mut String, idx: usize) -> usize {
         self.0.push_clause(buf, idx)
     }
 
@@ -48,7 +48,7 @@ pub struct And<L, R>(L, R);
 
 impl<F: Source, L: Clause<F>, R: Clause<F>> Clause<F> for And<L, R> {
     #[inline]
-    fn push_clause(&mut self, buf: &mut String, idx: usize) -> usize {
+    fn push_clause(&self, buf: &mut String, idx: usize) -> usize {
         buf.push_str("(");
         let idx = self.0.push_clause(buf, idx);
         buf.push_str(") AND (");
@@ -67,7 +67,7 @@ pub struct Or<L, R>(L, R);
 
 impl<F: Source, L: Clause<F>, R: Clause<F>> Clause<F> for Or<L, R> {
     #[inline]
-    fn push_clause(&mut self, buf: &mut String, idx: usize) -> usize {
+    fn push_clause(&self, buf: &mut String, idx: usize) -> usize {
         buf.push_str("( ");
         let idx = self.0.push_clause(buf, idx);
         buf.push_str(" ) OR ( ");
@@ -85,7 +85,7 @@ pub struct Not<C>(C);
 
 impl<F: Source, C: Clause<F>> Clause<F> for Not<C> {
     #[inline]
-    fn push_clause(&mut self, buf: &mut String, idx: usize) -> usize {
+    fn push_clause(&self, buf: &mut String, idx: usize) -> usize {
         buf.push_str("NOT ( ");
         let idx = self.0.push_clause(buf, idx);
         buf.push_str(" )");
@@ -99,14 +99,14 @@ impl<F: Source, C: Clause<F>> Clause<F> for Not<C> {
 
 pub trait WhereClause<F: Source>  {
     #[inline]
-    fn push_where_clause(&mut self, buf: &mut String, idx: usize) -> usize;
+    fn push_where_clause(&self, buf: &mut String, idx: usize) -> usize;
     type Set;
     fn into_types(self) -> Self::Set;
 }
 
 impl<F: Source, C: Clause<F>> WhereClause<F> for Wrap<C> {
     #[inline]
-    fn push_where_clause(&mut self, buf: &mut String, idx: usize) -> usize {
+    fn push_where_clause(&self, buf: &mut String, idx: usize) -> usize {
         buf.push_str(" WHERE ");
         self.0.push_clause(buf, idx)
     }
@@ -116,7 +116,7 @@ impl<F: Source, C: Clause<F>> WhereClause<F> for Wrap<C> {
 
 impl<F: Source> WhereClause<F> for Unit {
     #[inline]
-    fn push_where_clause(&mut self, _buf: &mut String, idx: usize) -> usize {
+    fn push_where_clause(&self, _buf: &mut String, idx: usize) -> usize {
         idx
     }
     type Set = Unit;
@@ -147,7 +147,7 @@ impl<C> ColWrap<C> {
 
 impl<F: Source, C: Column<F>> Clause<F> for Equality<ColWrap<C>> {
     #[inline]
-    fn push_clause(&mut self, buf: &mut String, idx: usize) -> usize {
+    fn push_clause(&self, buf: &mut String, idx: usize) -> usize {
         (self.0).0.push_name(buf);
         buf.push_str(" = ");
         buf.push_str(&format!("${}", idx));
@@ -161,7 +161,7 @@ impl<F: Source, C: Column<F>> Clause<F> for Equality<ColWrap<C>> {
 
 impl<F: Source, C: Column<F>> Clause<F> for IsNull<ColWrap<C>> {
     #[inline]
-    fn push_clause(&mut self, buf: &mut String, idx: usize) -> usize {
+    fn push_clause(&self, buf: &mut String, idx: usize) -> usize {
         (self.0).0.push_name(buf);
         buf.push_str(" IS NULL");
         idx
@@ -178,7 +178,7 @@ impl<'a, F: Source, C: Column<F>,
         Q: IntoSql<Get = Wrap<ColWrap<C>>>>
             Clause<F> for InSubQuery<'a, ColWrap<C>, Q> {
 
-    fn push_clause(&mut self, buf: &mut String, idx: usize) -> usize {
+    fn push_clause(&self, buf: &mut String, idx: usize) -> usize {
         (self.0).0.push_name(buf);
         buf.push_str(" IN ( ");
         let idx = self.1.push_sql(buf, idx);

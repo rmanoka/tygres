@@ -26,7 +26,7 @@ pub trait IntoSql: Sized {
     type Get;
     type Set;
 
-    fn push_sql(&mut self, buf: &mut String, idx: usize) -> usize;
+    fn push_sql(&self, buf: &mut String, idx: usize) -> usize;
     fn into_types(self) -> (Self::Get, Self::Set);
 }
 

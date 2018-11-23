@@ -15,7 +15,7 @@ for DeleteBuilder<F, S, W> {
     type Set = SqlInput<Unit, W::Set, Unit, Unit>;
     type Get = S;
 
-    fn push_sql(&mut self, buf: &mut String, idx: usize) -> usize {
+    fn push_sql(&self, buf: &mut String, idx: usize) -> usize {
         buf.push_str("DELETE FROM ");
         self.source.push_source(buf);
         let idx = self.where_clause.push_where_clause(buf, idx);

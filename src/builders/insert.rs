@@ -55,7 +55,7 @@ where Wrap<V>: InsValue<F> {
     type Set = SqlInput<Wrap<Reps<V>>, Unit, Unit, Unit>;
     type Get = S;
 
-    fn push_sql(&mut self, buf: &mut String, idx: usize) -> usize {
+    fn push_sql(&self, buf: &mut String, idx: usize) -> usize {
         buf.push_str("INSERT INTO ");
         self.source.push_source(buf);
         let idx = self.values.push_values(buf, self.reps, idx);
@@ -82,7 +82,7 @@ for InsertBuilder<F, V, S, Unit> {
     type Set = SqlInput<V, Unit, Unit, Unit>;
     type Get = S;
 
-    fn push_sql(&mut self, buf: &mut String, idx: usize) -> usize {
+    fn push_sql(&self, buf: &mut String, idx: usize) -> usize {
         buf.push_str("INSERT INTO ");
         self.source.push_source(buf);
         let idx = self.values.push_values(buf, 1, idx);

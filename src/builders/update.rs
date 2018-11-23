@@ -35,7 +35,7 @@ for UpdateBuilder<F, V, S, W> {
     type Set = SqlInput<V, W::Set, Unit, Unit>;
     type Get = S;
 
-    fn push_sql(&mut self, buf: &mut String, idx: usize) ->  usize {
+    fn push_sql(&self, buf: &mut String, idx: usize) ->  usize {
         buf.push_str("UPDATE ");
         self.source.push_source(buf);
         let idx = self.values.push_values(buf, idx);
