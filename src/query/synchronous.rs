@@ -1,12 +1,12 @@
 use crate::{*, utils::*};
+pub use postgres::GenericConnection as Connection;
 use postgres::{
     stmt::Statement as PgStatement,
-    Connection, Error,
-    rows::{Rows, Iter},
+    Error, rows::{Rows, Iter},
 };
 
 pub trait Synchronous: IntoSql + Sized {
-    fn prepare(mut self, conn: &Connection)
+    fn prepare(mut self, conn: &dyn Connection)
     -> Result<Statement<Self::Get, Self::Set>, Error> {
 
         let mut sql: String = String::with_capacity(0x1000);
