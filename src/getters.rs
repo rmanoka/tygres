@@ -27,6 +27,12 @@ pub trait Makes<'a, S>: Sized {
     fn get<R: Row>(s: &'a S, row: &'a R, idx: usize) -> (Self, usize);
 }
 
+impl<'a, S, T: Makes<'a, S>> Makes<'a, &'a S> for T {
+    fn get<R: Row>(s: &'a &'a S, row: &'a R, idx: usize) -> (Self, usize) {
+        <T as Makes<'a, S>>::get(*s, row, idx)
+    }
+}
+
 impl<
     'a, S, T,
     A: Makes<'a, S>,

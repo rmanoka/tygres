@@ -100,8 +100,6 @@ impl Offsetting for Wrap<Holder> {
 
 }
 
-
-
 impl<
     F: Source, S: Selection<F>, W: WhereClause<F>,
     O: OrderByClause<F>, L: Limiting, Of: Offsetting, Suf: Suffix,
@@ -136,3 +134,101 @@ impl<
 
 }
 
+pub struct CursorQuery<S> {
+    pub prepared: String,
+    setter: S,
+    idx: usize,
+}
+
+pub struct Fetcher<G> {
+    pub name: String,
+    getter: G,
+}
+
+impl<
+    F: Source, S: Selection<F>, W: WhereClause<F>,
+    O: OrderByClause<F>, L: Limiting, Of: Offsetting, Suf: Suffix,
+> SelectBuilder<F, Wrap<S>, W, O, L, Of, Suf> {
+
+    pub fn into_cursor(self, name: &str)
+    -> (
+        CursorQuery<SqlInput<Unit, W::Set, L::Set, Of::Set>>,
+        Fetcher<Wrap<S>>,
+    ) {
+
+        let mut sql: String = String::with_capacity(0x1000);
+        sql.push_str("DECLARE ");
+        sql.push_str(name);
+        sql.push_str(" CURSOR FOR ");
+        let idx = self.push_sql(&mut sql, 1);
+        let (getter, setter) = self.into_types();
+
+        (
+            CursorQuery{
+                prepared: sql,
+                setter, idx,
+            },
+            Fetcher {
+                name: name.to_owned(),
+                getter,
+            },
+        )
+
+    }
+}
+
+impl<S> IntoSql for CursorQuery<S> {
+
+    type Set = S;
+    type Get = Unit;
+
+    fn push_sql(&self, buf: &mut String, idx: usize) -> usize {
+        if (idx != 1) {
+            panic!("cursors can not be sub-queries");
+        }
+        buf.push_str(&self.prepared);
+        self.idx
+    }
+
+    fn into_types(self) -> (Self::Get, Self::Set) {
+        (
+            Unit,
+            self.setter,
+        )
+    }
+}
+
+
+pub struct Batch<'a, G> {
+    pub name: &'a str,
+    getter: &'a G,
+    count: usize,
+}
+
+impl<G> Fetcher<G> {
+    pub fn fetch(&self, count: usize) -> Batch<G> {
+        Batch{
+            name: self.name.as_ref(),
+            getter: &self.getter,
+            count,
+        }
+    }
+}
+
+
+impl<'a, G> IntoSql for Batch<'a, G> {
+    type Set = Unit;
+    type Get = &'a G;
+
+    fn push_sql(&self, buf: &mut String, idx: usize) -> usize {
+        buf.push_str("FETCH ");
+        buf.push_str(&self.count.to_string());
+        buf.push_str(" FROM ");
+        buf.push_str(self.name);
+        idx
+    }
+
+    fn into_types(self) -> (Self::Get, Self::Set) {
+        (self.getter, Unit)
+    }
+}

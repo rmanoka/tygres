@@ -8,4 +8,4 @@ pub use self::insert::InsertBuilder;
 pub use self::update::UpdateBuilder;
 pub use self::delete::DeleteBuilder;
 pub use self::value::ValueBuilder;
-pub use self::select::SelectBuilder;
+pub use self::select::*;

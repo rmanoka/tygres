@@ -6,6 +6,7 @@ use postgres::{
 };
 
 pub trait Synchronous: IntoSql + Sized {
+
     fn prepare(mut self, conn: &dyn Connection)
     -> Result<Statement<Self::Get, Self::Set>, Error> {
 
@@ -20,6 +21,7 @@ pub trait Synchronous: IntoSql + Sized {
         })
 
     }
+
 }
 
 impl<T: IntoSql + Sized> Synchronous for T {}
@@ -75,6 +77,10 @@ impl<'a, Get> QueryRows<'a, Get> {
             iter: self.rows.iter(),
             getter: &self.getter,
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.rows.len()
     }
 }
 
