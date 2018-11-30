@@ -138,9 +138,9 @@ impl<C> ColWrap<C> {
     }
 
     pub fn in_query<'a, Q: IntoSql<Get=Wrap<Self>>>(
-            self, query: Q, lock: &'a str) -> InSubQuery<'a, Self, Q> {
+            self, query: Q) -> InSubQuery<Self, Q> {
 
-        InSubQuery(self, query, lock)
+        InSubQuery(self, query)
 
     }
 }
@@ -172,17 +172,16 @@ impl<F: Source, C: Column<F>> Clause<F> for IsNull<ColWrap<C>> {
     }
 }
 
-pub struct InSubQuery<'a, C, Q: IntoSql>(C, Q, &'a str);
+pub struct InSubQuery<C, Q: IntoSql>(C, Q);
 
-impl<'a, F: Source, C: Column<F>,
+impl<F: Source, C: Column<F>,
         Q: IntoSql<Get = Wrap<ColWrap<C>>>>
-            Clause<F> for InSubQuery<'a, ColWrap<C>, Q> {
+            Clause<F> for InSubQuery<ColWrap<C>, Q> {
 
     fn push_clause(&self, buf: &mut String, idx: usize) -> usize {
         (self.0).0.push_name(buf);
         buf.push_str(" IN ( ");
         let idx = self.1.push_sql(buf, idx);
-        buf.push_str(self.2);
         buf.push_str(")");
         idx
     }

@@ -7,6 +7,22 @@ builder! {
         values: V as setting(Val: ColumnsSetter<F>),
         selection: S as returning(Sel: Selection<F>),
         reps: R as *repeating(Rep),
+        conflict: C as *conflicting(Cfl),
+    }
+}
+
+pub trait Conflict {
+    fn push_conflict(&self, buf: &mut String);
+}
+
+impl Conflict for Unit {
+    fn push_conflict(&self, buf: &mut String) {}
+}
+
+impl Conflict for &'static str {
+    fn push_conflict(&self, buf: &mut String) {
+        buf.push_str(" ON CONFLICT ");
+        buf.push_str(self);
     }
 }
 
@@ -48,8 +64,8 @@ impl<F: Source> InsValue<F> for Unit {
     }
 }
 
-impl<F: Source, V, S: ReturningClause<F>> IntoSql
-for InsertBuilder<F, Wrap<V>, S, usize>
+impl<F: Source, V, S: ReturningClause<F>, C: Conflict> IntoSql
+for InsertBuilder<F, Wrap<V>, S, usize, C>
 where Wrap<V>: InsValue<F> {
 
     type Set = SqlInput<Wrap<Reps<V>>, Unit, Unit, Unit>;
@@ -59,6 +75,7 @@ where Wrap<V>: InsValue<F> {
         buf.push_str("INSERT INTO ");
         self.source.push_source(buf);
         let idx = self.values.push_values(buf, self.reps, idx);
+        self.conflict.push_conflict(buf);
         self.selection.push_returning(&self.source, buf);
         idx
     }
@@ -76,8 +93,8 @@ where Wrap<V>: InsValue<F> {
     }
 }
 
-impl<F: Source, V: InsValue<F>, S: ReturningClause<F>> IntoSql
-for InsertBuilder<F, V, S, Unit> {
+impl<F: Source, V: InsValue<F>, S: ReturningClause<F>, C: Conflict> IntoSql
+for InsertBuilder<F, V, S, Unit, C> {
 
     type Set = SqlInput<V, Unit, Unit, Unit>;
     type Get = S;
@@ -86,6 +103,7 @@ for InsertBuilder<F, V, S, Unit> {
         buf.push_str("INSERT INTO ");
         self.source.push_source(buf);
         let idx = self.values.push_values(buf, 1, idx);
+        self.conflict.push_conflict(buf);
         self.selection.push_returning(&self.source, buf);
         idx
     }

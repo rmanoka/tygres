@@ -5,7 +5,7 @@ pub trait Source: Sized {
     fn push_source(&self, buf: &mut String);
 
     #[inline]
-    fn select(self) -> SelectBuilder<Self, Unit, Unit, Unit, Unit, Unit> {
+    fn select(self) -> SelectBuilder<Self, Unit, Unit, Unit, Unit, Unit, Unit> {
         SelectBuilder {
             source: self,
             selection: Unit,
@@ -13,17 +13,19 @@ pub trait Source: Sized {
             limit: Unit,
             offset: Unit,
             order: Unit,
+            suffix: Unit,
         }
     }
 
 
     #[inline]
-    fn insert(self) -> InsertBuilder<Self, Unit, Unit, Unit> {
+    fn insert(self) -> InsertBuilder<Self, Unit, Unit, Unit, Unit> {
         InsertBuilder{
             source: self,
             values: Unit,
             selection: Unit,
             reps: Unit,
+            conflict: Unit,
         }
     }
 

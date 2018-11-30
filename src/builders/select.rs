@@ -9,6 +9,21 @@ builder! {
         order: O as ordering(Order: OrderByClause<F>),
         limit: L as limiting(Lim),
         offset: Of as offsetting(Off),
+        suffix: Suf as *suffixing(Suff),
+    }
+}
+
+pub trait Suffix {
+    fn push_sql(&self, buf: &mut String);
+}
+
+impl Suffix for Unit {
+    fn push_sql(&self, buf: &mut String) {}
+}
+
+impl Suffix for &'static str {
+    fn push_sql(&self, buf: &mut String) {
+        buf.push_str(self);
     }
 }
 
@@ -89,8 +104,8 @@ impl Offsetting for Wrap<Holder> {
 
 impl<
     F: Source, S: Selection<F>, W: WhereClause<F>,
-    O: OrderByClause<F>, L: Limiting, Of: Offsetting
-> IntoSql for SelectBuilder<F, Wrap<S>, W, O, L, Of> {
+    O: OrderByClause<F>, L: Limiting, Of: Offsetting, Suf: Suffix,
+> IntoSql for SelectBuilder<F, Wrap<S>, W, O, L, Of, Suf> {
 
     type Set = SqlInput<Unit, W::Set, L::Set, Of::Set>;
     type Get = Wrap<S>;
@@ -103,6 +118,7 @@ impl<
         let idx = self.where_clause.push_where_clause(buf, idx);
         let idx = self.limit.push_limit(buf, idx);
         let idx = self.offset.push_offset(buf, idx);
+        self.suffix.push_sql(buf);
         idx
     }
 
