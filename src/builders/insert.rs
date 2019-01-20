@@ -47,7 +47,8 @@ impl<F: Source, S: ColumnsSetter<F>> InsValue<F> for Wrap<S> {
                 buf.push_str(", ");
             }
             buf.push_str(" (");
-            idx = self.0.push_values(buf, idx);
+            let (r_idx, _) = self.0.push_values(buf, idx);
+            idx = r_idx;
             buf.push_str(")");
         }
         idx

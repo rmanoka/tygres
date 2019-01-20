@@ -22,7 +22,7 @@ impl<F: Source, S: ColumnsSetter<F>> UpdValue<F> for Wrap<S> {
             panic!("selection empty");
         }
         buf.push_str(") = ( ROW (");
-        let idx = self.0.push_values(buf, idx);
+        let (idx, _) = self.0.push_values(buf, idx);
         buf.push_str("))");
         idx
     }

@@ -183,7 +183,7 @@ impl<S> IntoSql for CursorQuery<S> {
     type Get = Unit;
 
     fn push_sql(&self, buf: &mut String, idx: usize) -> usize {
-        if (idx != 1) {
+        if idx != 1 {
             panic!("cursors can not be sub-queries");
         }
         buf.push_str(&self.prepared);
@@ -191,10 +191,7 @@ impl<S> IntoSql for CursorQuery<S> {
     }
 
     fn into_types(self) -> (Self::Get, Self::Set) {
-        (
-            Unit,
-            self.setter,
-        )
+        (Unit, self.setter)
     }
 }
 

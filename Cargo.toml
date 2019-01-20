@@ -8,6 +8,8 @@ edition = "2018"
 futures = "0.1.25"
 tokio = {version = "0.1.11", features = ["async-await-preview"]}
 tokio-async-await = "0.1.4"
-tygres-macros = {path = "../tygres-macros"}
-tokio-postgres = {path = "../rust-postgres/tokio-postgres"}
-postgres = {path = "../rust-postgres/postgres"}
+tygres-macros = { git = "https://github.com/rmanoka/tygres-macros",  branch = "master"}
+postgres = { git = "https://github.com/sfackler/rust-postgres", rev="04bd98e7edb238511661b311c725a176012bca6a" }
+tokio-postgres = { git = "https://github.com/sfackler/rust-postgres", rev="04bd98e7edb238511661b311c725a176012bca6a" }
+# "0.13.2"
+# tokio-postgres = "0.3.0"

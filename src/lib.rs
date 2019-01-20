@@ -16,7 +16,7 @@ pub mod builders;
 pub use self::{
     utils::{Seq},
     query::{Row, TypedRow, IntoSql, SqlInput},
-    query::synchronous, query::asynchronous,
+    query::synchronous, // query::asynchronous,
     source::{Source, Column},
     getters::{Selection, ReturningClause, Makes, OptionalSelection, Getter},
     filter::{Clause, WhereClause, Equality},

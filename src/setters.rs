@@ -3,7 +3,7 @@ use postgres::types::ToSql;
 
 pub trait ColumnsSetter<F: Source> {
     fn push_selection(&self, buf: &mut String) -> bool;
-    fn push_values(&self, buf: &mut String, idx: usize) -> usize;
+    fn push_values(&self, buf: &mut String, idx: usize) -> (usize, bool);
 }
 
 impl<
@@ -13,17 +13,15 @@ impl<
 > ColumnsSetter<F> for Seq<A, B> {
     #[inline]
     fn push_selection(&self, buf: &mut String) -> bool {
-        if self.0.push_selection(buf) {
-            buf.push_str(", ");
-            self.1.push_selection(buf)
-        } else {
-            self.1.push_selection(buf)
-        }
+        let did = self.0.push_selection(buf);
+        if did { buf.push_str(", "); }
+        self.1.push_selection(buf)
     }
 
     #[inline]
-    fn push_values(&self, buf: &mut String, idx: usize) -> usize {
-        let idx = self.0.push_values(buf, idx);
+    fn push_values(&self, buf: &mut String, idx: usize) -> (usize, bool) {
+        let (idx, did) = self.0.push_values(buf, idx);
+        if did { buf.push_str(", "); }
         self.1.push_values(buf, idx)
     }
 }
@@ -114,7 +112,7 @@ impl<
     }
 
     #[inline]
-    fn push_values(&self, buf: &mut String, idx: usize) -> usize {
+    fn push_values(&self, buf: &mut String, idx: usize) -> (usize, bool) {
         <S as ColumnsSetter<F>>::push_values(
             &self.0, buf, idx
         )
@@ -136,13 +134,13 @@ impl<
     }
 
     #[inline]
-    fn push_values(&self, buf: &mut String, idx: usize) -> usize {
+    fn push_values(&self, buf: &mut String, idx: usize) -> (usize, bool) {
         if let Some(_) = self.1 {
             <S as ColumnsSetter<F>>::push_values(
                 &self.0, buf, idx
             )
         } else {
-            idx
+            (idx, false)
         }
     }
 }
@@ -160,13 +158,13 @@ impl<
     }
 
     #[inline]
-    fn push_values(&self, buf: &mut String, idx: usize) -> usize {
+    fn push_values(&self, buf: &mut String, idx: usize) -> (usize, bool) {
         if let Some(_) = self.1 {
             <S as ColumnsSetter<F>>::push_values(
                 &self.0, buf, idx
             )
         } else {
-            idx
+            (idx, false)
         }
     }
 }

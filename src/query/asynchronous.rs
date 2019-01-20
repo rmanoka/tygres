@@ -7,7 +7,7 @@ use tokio_postgres::{
 
 pub trait Asynchronous: IntoSql + Sized {
 
-    fn prepare(mut self, cl: &mut Client)
+    fn prepare(self, cl: &mut Client)
     -> PrepareFuture<Self::Get, Self::Set> {
 
         let mut sql: String = String::with_capacity(0x1000);
@@ -62,15 +62,14 @@ pub struct Prepared<Get, Set> {
 
 impl<Get, Set> Prepared<Get, Set> {
     pub fn execute_with<'a, A>(&'a self, cl: &mut Client, assignment: A) -> Execute
-    where Set: for<'b> Takes<'b, A> {
+    where Set: Takes<'a, A> {
 
         let mut values = Vec::with_capacity(self.setter_count);
         self.setter.push_values(assignment, &mut values);
         cl.execute(&self.statement, &values[..])
     }
 
-    pub fn query_with<'a, A>(&'a self, cl: &mut Client, assignment: A)
-    -> QueryStream<'a, Get>
+    pub fn query_with<'a, A>(&'a self, cl: &mut Client, assignment: A) -> QueryStream<'a, Get>
     where Set: Takes<'a, A> {
         let mut values = Vec::with_capacity(self.setter_count);
         self.setter.push_values(assignment, &mut values);

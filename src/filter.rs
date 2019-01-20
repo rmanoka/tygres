@@ -124,12 +124,17 @@ impl<F: Source> WhereClause<F> for Unit {
 }
 
 pub struct Equality<C>(C);
+pub struct InList<C>(C, usize);
 pub struct IsNull<C>(C);
 
 impl<C> ColWrap<C> {
     pub fn equality<F: Source>(self) -> Equality<Self>
     where C: Column<F> {
         Equality(self)
+    }
+
+    pub fn in_list(self, size: usize) -> InList<Self> {
+        InList(self, size)
     }
 
     pub fn is_null<F: Source>(self) -> IsNull<Self>
@@ -157,6 +162,42 @@ impl<F: Source, C: Column<F>> Clause<F> for Equality<ColWrap<C>> {
     fn into_types(self) -> Self::Set {
         self.0
     }
+}
+
+impl<F: Source, C: Column<F>> Clause<F> for InList<ColWrap<C>> {
+    #[inline]
+    fn push_clause(&self, buf: &mut String, mut idx: usize) -> usize {
+        (self.0).0.push_name(buf);
+        buf.push_str(" IN (");
+        for cnt in 0..self.1 {
+            if cnt != 0 { buf.push_str(", ") }
+            buf.push_str(&format!("${}", idx));
+            idx += 1;
+        }
+        buf.push_str(")");
+        idx
+    }
+    type Set = Self;
+    fn into_types(self) -> Self::Set {
+        self
+    }
+}
+
+impl<   'a, S, T: Takes<'a, S>,
+        I: Iterator<Item = S>>
+Takes<'a, I> for InList<T> {
+
+    fn push_values<'b:'a>(&'b self, values: I, buf: &mut Vec<&'a ToSql>) {
+        let mut cnt = 0;
+        for val in values {
+            self.0.push_values(val, buf);
+            cnt += 1;
+            if cnt > self.1 {
+                panic!("Arguments count mismatch");
+            }
+        }
+    }
+
 }
 
 impl<F: Source, C: Column<F>> Clause<F> for IsNull<ColWrap<C>> {
@@ -191,4 +232,3 @@ impl<F: Source, C: Column<F>,
         self.1.into_types().1
     }
 }
-

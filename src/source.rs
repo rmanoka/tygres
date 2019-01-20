@@ -72,12 +72,9 @@ impl<F: Source, C: Column<F>> ColumnsSetter<F> for ColWrap<C> {
     }
 
     #[inline]
-    fn push_values(&self, buf: &mut String, idx: usize) -> usize {
-        if idx != 1 {
-            buf.push_str(", ");
-        }
+    fn push_values(&self, buf: &mut String, idx: usize) -> (usize, bool) {
         buf.push_str(&format!("${}", idx));
-        idx + 1
+        (idx + 1, true)
     }
 }
 
